@@ -1,11 +1,10 @@
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';
+import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';
 const TZ='Europe/Istanbul',today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:TZ}),nowT=()=>new Date().toLocaleTimeString('sv-SE',{timeZone:TZ,hour:'2-digit',minute:'2-digit'});
 const nt=t=>{const m=String(t||'').match(/(\d{1,2})\s*[:.]\s*(\d{2})/);return m?m[1].padStart(2,'0')+':'+m[2]:null;};
 export async function POST(req){
  if(process.env.VAPI_SECRET&&req.headers.get('x-vapi-secret')!==process.env.VAPI_SECRET)return NextResponse.json({error:'unauthorized'},{status:401});
  const body=await req.json(),m=body.message||body,call=m.call||{},aid=call.assistantId||m.assistant?.id;
- let bid=new URL(req.url).searchParams.get('b');
- if(!bid&&aid){const {data}=await adminSb.from('businesses').select('id').eq('vapi_assistant_id',aid).limit(1);bid=data?.[0]?.id||null;}
+ const bid=await resolve(req,'tools',aid);
  const {data:biz}=bid?await adminSb.from('businesses').select('status').eq('id',bid).single():{data:null};
  const results=[];
  for(const tc of m.toolCallList||m.toolCalls||[]){
