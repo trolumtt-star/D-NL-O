@@ -1,12 +1,12 @@
 import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {extract} from '@/lib/gemini';
 const today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Istanbul'});
 export async function POST(req){
- if(process.env.VAPI_SECRET&&req.headers.get('x-vapi-secret')!==process.env.VAPI_SECRET)return NextResponse.json({error:'unauthorized'},{status:401});
+ if(process.env.VAPI_SECRET&&req.headers.get('x-vapi-secret')!==process.env.VAPI_SECRET){await adminSb.from('webhook_events').insert({type:'reddedildi',payload:{error:'VAPI_SECRET uyuşmuyor. Vapi secret başlığı: '+(req.headers.get('x-vapi-secret')?'geldi ama farklı':'hiç gelmedi')}});return NextResponse.json({error:'unauthorized'},{status:401});}
  const body=await req.json(),m=body.message||body,type=m.type||'unknown',call=m.call||{},aid=call.assistantId||m.assistant?.id;
  if(type!=='end-of-call-report'||!call.id)return NextResponse.json({ok:true,ignored:type});
  const bid=await resolve(req,'events',aid);
  await adminSb.from('webhook_events').insert({type,vapi_call_id:call.id,business_id:bid,payload:body});
- if(!bid)return NextResponse.json({ok:true,error:'business_not_found'});
+ if(!bid){await adminSb.from('webhook_events').insert({type:'reddedildi',vapi_call_id:call.id,payload:{error:'İşletme bulunamadı. Adres yanlış veya araç adresi kullanılmış, ya da assistant ID eşleşmiyor.'}});return NextResponse.json({ok:true,error:'business_not_found'});}
  const sec=Math.round(m.durationSeconds??((new Date(m.endedAt)-new Date(m.startedAt))/1000))||0;
  const transcript=m.transcript||m.artifact?.transcript||(m.artifact?.messages||[]).filter(x=>x.role==='user'||x.role==='bot').map(x=>x.role+': '+x.message).join('\n')||null;
  const g=await extract(transcript,today());
