@@ -5,7 +5,7 @@ const F=[['name','İşletme adı'],['username','Kullanıcı adı'],['password','
 export default function Admin(){const u=useUser(),r=useRouter(),[list,setL]=useState([]),[ev,setEv]=useState([]),[f,setF]=useState({business_type:'restaurant',quota_minutes_total:100,table_count:5}),[m,setM]=useState(''),[ep,setEp]=useState([]),[q,setQ]=useState('');
  const isA=u&&u.email.toLowerCase()===process.env.NEXT_PUBLIC_ADMIN_EMAIL.toLowerCase();
  useEffect(()=>{if(u===null)r.replace('/login');else if(u&&!isA)r.replace('/panel');},[u]);
- const load=async()=>{const a=await sb.from('businesses').select('*').order('created_at',{ascending:false});setL(a.data||[]);const b=await sb.from('webhook_events').select('type,business_id,vapi_call_id').order('created_at',{ascending:false}).limit(8);setEv(b.data||[]);const e=await sb.from('webhook_endpoints').select('*').order('created_at');setEp(e.data||[]);};
+ const load=async()=>{const a=await sb.from('businesses').select('*').order('created_at',{ascending:false});setL(a.data||[]);const b=await sb.from('webhook_events').select('type,business_id,vapi_call_id,err:payload->>error').in('type',['end-of-call-report','gemini_error']).order('created_at',{ascending:false}).limit(8);setEv(b.data||[]);const e=await sb.from('webhook_endpoints').select('*').order('created_at');setEp(e.data||[]);};
  useEffect(()=>{if(!isA)return;load();const a=live('b','businesses',null,load),b=live('w','webhook_events',null,load);return()=>{a();b();};},[isA]);
  const run=async(fn,ok)=>{setM('');try{await fn();setM(ok);load();}catch(e){setM('Hata: '+e.message);}};
  const origin=typeof window!=='undefined'?location.origin:'';
@@ -27,4 +27,4 @@ export default function Admin(){const u=useUser(),r=useRouter(),[list,setL]=useS
   <button className="g" onClick={()=>run(()=>api('PATCH',{id:b.id,status:b.status==='active'?'suspended':'active'}),'Durum değişti.')}>{b.status==='active'?'Durdur':'Aç'}</button>
   <button className="g" onClick={()=>{const v=prompt('Yeni şifre');if(v)run(()=>api('PATCH',{id:b.id,password:v}),'Şifre değişti.');}}>Şifre</button>
   <button className="d" onClick={()=>confirm(b.name+' silinsin mi?')&&run(()=>api('DELETE',{id:b.id}),'Silindi.')}>Sil</button></div></div>;})}</div>
- <div className="card" style={{marginTop:24}}><h2>Son webhook olayları</h2><table><tbody>{ev.map((e,i)=><tr key={i}><td>{e.type}</td><td className="mut">{e.business_id||'eşleşmedi'}</td><td className="mut">{e.vapi_call_id}</td></tr>)}</tbody></table></div></div>;}
+ <div className="card" style={{marginTop:24}}><h2>Son webhook olayları</h2><table><tbody>{ev.map((e,i)=><tr key={i}><td>{e.type}</td><td className="mut">{e.business_id||'eşleşmedi'}</td><td className="mut">{e.vapi_call_id}</td><td className="mut">{e.err||''}</td></tr>)}</tbody></table></div></div>;}
