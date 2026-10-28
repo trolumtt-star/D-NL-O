@@ -9,7 +9,7 @@ export default function Admin(){
  const u=useUser(),r=useRouter(),[tab,setTab]=useState('home'),[list,setL]=useState([]),[ep,setEp]=useState([]),[ev,setEv]=useState([]),[cl,setCl]=useState([]),[f,setF]=useState({business_type:'restaurant',quota_minutes_total:100,table_count:5}),[m,setM]=useState(''),[q,setQ]=useState(''),[tb,setTb]=useState(''),
  [tt,setTt]=useState('Müşteri: İki dürüm ve bir ayran alacağım.\nAsistan: Adresinizi alabilir miyim?\nMüşteri: Adnan Menderes Caddesi numara 12. Adım Tuna.'),[out,setOut]=useState(null),[hl,setHl]=useState(null),[gm,setGm]=useState(null);
  const isA=u&&u.email.toLowerCase()===process.env.NEXT_PUBLIC_ADMIN_EMAIL.toLowerCase();
- useEffect(()=>{if(u===null)r.replace('/login');else if(u&&!isA)r.replace('/panel');},[u]);
+ useEffect(()=>{if(u===null)location.replace('/login');else if(u&&!isA)r.replace('/panel');},[u]);
  const load=async()=>{const [a,e,v,c]=await Promise.all([sb.from('businesses').select('*').order('created_at',{ascending:false}),sb.from('webhook_endpoints').select('*').order('created_at'),sb.from('webhook_events').select('created_at,type,business_id,vapi_call_id,err:payload->>error').in('type',['end-of-call-report','gemini_error','reddedildi']).order('created_at',{ascending:false}).limit(40),sb.from('calls').select('business_id,duration_seconds,created_at').gte('created_at',new Date(Date.now()-7*864e5).toISOString()).limit(5000)]);setL(a.data||[]);setEp(e.data||[]);setEv(v.data||[]);setCl(c.data||[]);};
  useEffect(()=>{if(!isA)return;load();const a=live('b','businesses',null,load),b=live('w','webhook_events',null,load);return()=>{a();b();};},[isA]);
  const run=async(fn,ok)=>{setM('');try{await fn();setM(ok);load();}catch(e){setM('Hata: '+e.message);}};
