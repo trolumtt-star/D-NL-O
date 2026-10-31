@@ -1,4 +1,4 @@
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {extract} from '@/lib/gemini';
+import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {extract,extractGeneric} from '@/lib/gemini';
 export const maxDuration=60;
 const ph=s=>{const d=String(s||'').replace(/\D/g,'');return d.length>=10&&d.length<=13?(d.length===10&&d[0]==='5'?'0'+d:d):null;};
 const today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Istanbul'});
@@ -19,6 +19,13 @@ export async function POST(req){
   if(error){await log('reddedildi',bid,call.id,'Kayıt yazılamadı: '+error.message);return NextResponse.json({error:error.message},{status:500});}
   if(!cid)return NextResponse.json({ok:true,duplicate:true});
   // 2) Gemini ile ayıkla, sonra aynı kaydı doldur
+  const {data:bz}=await adminSb.from('businesses').select('vertical').eq('id',bid).single();
+  if(bz?.vertical&&bz.vertical!=='restaurant'){
+   const {data:vc}=await adminSb.from('verticals').select('config').eq('id',bz.vertical).single();
+   const gx=await extractGeneric(transcript,today(),vc?.config?.fields||[]);if(gx.error)await log('gemini_error',bid,call.id,gx.error);
+   const d=gx.data||{},ex=Object.fromEntries(Object.entries(d).filter(([k,v])=>v!=null&&v!==''&&k!=='customerName'&&k!=='statedPhone'));
+   await adminSb.from('calls').update({customer_name:d.customerName||null,orders:d.orders||null,address:d.address||d.deliveryAddress||null,stated_phone:ph(d.statedPhone),extracted:Object.keys(ex).length?ex:null}).eq('id',cid);
+   return NextResponse.json({ok:true});}
   const g=await extract(transcript,today());
   if(g.error)await log('gemini_error',bid,call.id,g.error);
   const sd={...v,...g.data};

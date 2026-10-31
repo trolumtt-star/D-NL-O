@@ -1,1 +1,1 @@
-{"regions":["sin1"]}
+{"regions":["sin1"],"crons":[{"path":"/api/cron/news","schedule":"0 5 * * *"}]}
