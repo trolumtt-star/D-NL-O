@@ -7,6 +7,6 @@ export async function POST(req){try{const b=await requireOwner(req);if(b.plan!==
  await adminSb.from('market_search_log').insert({business_id:b.id,q:query});
  const {data:c}=await adminSb.from('market_cache').select('results,fetched_at').eq('q',query).maybeSingle();
  if(c&&Date.now()-new Date(c.fetched_at).getTime()<864e5)return NextResponse.json({items:c.results});
- const r=await marketSearch(query);if(r.error)throw new Error(r.error);
+ const r=await marketSearch(query);if(r.error){if(r.blocked)await adminSb.from('webhook_events').insert({type:'market_bot',business_id:b.id,payload:{error:'Arama engellendi: '+r.error.slice(0,200)}});throw new Error(r.error);}
  await adminSb.from('market_cache').upsert({q:query,results:r.items,fetched_at:new Date().toISOString()});return NextResponse.json({items:r.items});}
  catch(e){return NextResponse.json({error:e.message},{status:400});}}

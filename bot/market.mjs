@@ -3,6 +3,7 @@ import {chromium} from 'playwright';import fs from 'node:fs';
 const {SUPABASE_URL:SB,SUPABASE_SERVICE_ROLE_KEY:KEY,GEMINI_API_KEY:GK}=process.env;
 const BASE=process.env.MARKET_URL||'https://uyguno.com',MODEL=process.env.GEMINI_MODEL||'gemini-3.8-flash';
 const UA=process.env.BOT_UA||'YankiAI-FiyatTakip/1.0 (izinli, gunde 1 sorgu)';
+const EXTRA=(()=>{try{return JSON.parse(process.env.MARKET_EXTRA_HEADERS||'{}');}catch{return {};}})();
 const H={apikey:KEY,Authorization:'Bearer '+KEY,'content-type':'application/json'};
 const rest=(p,o={})=>fetch(SB+'/rest/v1/'+p,{...o,headers:{...H,...o.headers}});
 const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9çğıöşü ]/g,' ').trim();
@@ -15,7 +16,7 @@ const items=await (await rest('watch_items?market_url=not.is.null&select=id,name
 if(!Array.isArray(items)){console.error('Supabase hatası',items);process.exit(1);}
 console.log(items.length,'ürün izleniyor');
 if(!items.length)process.exit(0);
-const browser=await chromium.launch(),ctx=await browser.newContext({userAgent:UA,viewport:{width:1280,height:1500},locale:'tr-TR'}),page=await ctx.newPage();
+const browser=await chromium.launch(),ctx=await browser.newContext({userAgent:UA,viewport:{width:1280,height:1500},locale:'tr-TR',extraHTTPHeaders:EXTRA}),page=await ctx.newPage();
 // 1) tasarım kontrolü: arama sayfasında ürün bağlantıları var mı?
 try{await open(page,`${BASE}/arama.php?q=s%C3%BCt`);const n=await page.locator('a[href*="/urun/"]').count();await page.screenshot({path:'shots/kontrol.jpg',type:'jpeg',quality:60});
  if(n<5)throw new Error('arama sonucunda ürün bağlantısı bulunamadı ('+n+')');}

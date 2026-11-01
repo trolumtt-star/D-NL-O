@@ -31,7 +31,7 @@ export default function Admin(){
  useEffect(()=>{const t=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(t);},[]);
  const loadLeads=async(c,k)=>{const {data}=await sb.from('leads').select('*').eq('city',c).eq('category',k).order('score',{ascending:false,nullsFirst:false}).limit(300);setLeads(data||[]);};
  useEffect(()=>{if(isA&&tab==='leads')loadLeads(lcity,lcat);},[isA,tab,lcity,lcat]);
- const leadSearch=async()=>{setLbusy('Aranıyor… (1 dakikaya kadar)');try{const r=await api('POST',{city:lcity,cat:lcat,limit:llim},'leads');setLeads(r.items);setM(`OpenStreetMap'te ${r.found} işletme bulundu, ${r.added} tanesi yeni.`);}catch(e){setM('Hata: '+e.message);}setLbusy('');};
+ const leadSearch=async()=>{setLbusy('Aranıyor… (1 dakikaya kadar)');try{const r=await api('POST',{city:lcity,cat:lcat,limit:llim},'leads');setLeads(r.items);setM(`${r.source==='yandex'?'Yandex':'OpenStreetMap'}'te ${r.found} işletme bulundu, ${r.added} tanesi yeni.`);}catch(e){setM('Hata: '+e.message);}setLbusy('');};
  const leadEnrich=async ids=>{setLbusy('Google verisi alınıyor…');try{const r=await api('POST',{ids},'leads/enrich');const bad=r.results.filter(x=>!x.ok);if(bad.length)setM('Hata: '+bad[0].error);await loadLeads(lcity,lcat);}catch(e){setM('Hata: '+e.message);}setLbusy('');};
  const shownL=leads.filter(x=>(!lstat||x.status===lstat)&&(!lph||x.phone));
  const enrichTop=async()=>{const ids=shownL.filter(x=>!x.enriched_at).slice(0,8).map(x=>x.id);for(let i=0;i<ids.length;i+=4)await leadEnrich(ids.slice(i,i+4));};
