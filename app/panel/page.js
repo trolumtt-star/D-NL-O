@@ -23,6 +23,12 @@ export default function Panel(){
   const a=live('r','reservations','business_id=eq.'+id,p=>{lr();if(p.eventType==='INSERT'&&ready.current){const x=p.new;push(`Masa ${x.table_number||'-'}, ${x.reservation_time} saatine rezerve edildi${x.customer_name?' ('+x.customer_name+')':''}`);}});
   const c=live('c','calls','business_id=eq.'+id,p=>{lc();if(!ready.current)return;const x=p.new;if(p.eventType==='INSERT'&&!x.orders)push(`Yeni çağrı: ${x.customer_name||x.caller_phone||'bilgiler işleniyor'}`);else if(x.orders&&x.order_status==='new'&&(p.eventType==='INSERT'||p.eventType==='UPDATE'))push(`${x.address||'Adres yok'} adresine: ${x.orders}`);});
   const d=live('b','businesses','id=eq.'+id,loadB);return()=>{a();c();d();e1();e2();e3();};},[b?.id]);
+ useEffect(()=>{if(tab!=='market'||!b?.id)return;
+  const onMsg=async e=>{if(e.origin!=='https://verio-ai.vercel.app')return;const d=e.data;if(!d||d.source!=='yankiai-market'||d.type!=='track')return;const p=d.product||{};
+   if(!p.id||!p.title){alert('Siteden eksik ürün bilgisi geldi (id/title gerekli). Site tarafındaki postMessage kodunu kontrol edin.');return;}
+   const {error}=await sb.from('watch_items').upsert({business_id:b.id,name:String(p.title).slice(0,80),market_url:p.url&&/^https:\/\//.test(p.url)?p.url.slice(0,490):null,market_name:p.market?String(p.market).slice(0,30):null,market_image:p.image&&/^https:\/\//.test(p.image)?p.image.slice(0,490):null,market_source:'verio-ai',market_product_id:String(p.id).slice(0,80),market_price:typeof p.price==='number'?p.price:null,alert_pct:1,market_error:null},{onConflict:'business_id,name'});
+   if(error)alert('Kaydedilemedi: '+error.message);else push(`${p.title} takibe eklendi.`);};
+  window.addEventListener('message',onMsg);return()=>window.removeEventListener('message',onMsg);},[tab,b?.id]);
  if(b===null)return null;if(b===false)return <div className="wrap"><p>Bu hesaba bağlı işletme yok.</p></div>;
  const s=usedSec(b),t=(b.quota_minutes_total||0)*60,p=t?Math.min(100,s/t*100):0,left=Math.max(0,Math.ceil((t-s)/60));
  const nm=tm(nowT()),act=x=>['pending','confirmed'].includes(x.status),td=res.filter(x=>x.reservation_date===today()&&act(x));
@@ -63,14 +69,7 @@ export default function Panel(){
   let nm='';try{nm=decodeURIComponent(m[1]).replace(/-/g,' ').trim();}catch{nm=m[1];}nm=nm.replace(/\b\w/g,c=>c.toUpperCase()).slice(0,80);
   const {error}=await sb.from('watch_items').upsert({business_id:b.id,name:nm,market_url:u.replace(/\/?$/,'/'),market_name:mmn.trim()||null,alert_pct:1,market_error:null},{onConflict:'business_id,name'});if(error)alert('Eklenemedi: '+error.message);else{setMu('');setMmn('');}};
 
-
  const EMBED='https://verio-ai.vercel.app';
- useEffect(()=>{if(tab!=='market'||!b?.id)return;
-  const onMsg=async e=>{if(e.origin!==EMBED)return;const d=e.data;if(!d||d.source!=='yankiai-market'||d.type!=='track')return;const p=d.product||{};
-   if(!p.id||!p.title){alert('Siteden eksik ürün bilgisi geldi (id/title gerekli). Site tarafındaki postMessage kodunu kontrol edin.');return;}
-   const {error}=await sb.from('watch_items').upsert({business_id:b.id,name:String(p.title).slice(0,80),market_url:p.url&&/^https:\/\//.test(p.url)?p.url.slice(0,490):null,market_name:p.market?String(p.market).slice(0,30):null,market_image:p.image&&/^https:\/\//.test(p.image)?p.image.slice(0,490):null,market_source:'verio-ai',market_product_id:String(p.id).slice(0,80),market_price:typeof p.price==='number'?p.price:null,alert_pct:1,market_error:null},{onConflict:'business_id,name'});
-   if(error)alert('Kaydedilemedi: '+error.message);else push(`${p.title} takibe eklendi.`);};
-  window.addEventListener('message',onMsg);return()=>window.removeEventListener('message',onMsg);},[tab,b?.id]);
  const tracked=watch.filter(x=>x.market_url),mkts=[...new Set((mres||[]).map(x=>x.market).filter(Boolean))],shownM=(mres||[]).filter(x=>!mf||x.market===mf).sort((a,b)=>ms?((a.price??1e9)-(b.price??1e9)):0);
  const Img=({src})=><div style={{height:130,background:'#fff',borderRadius:14,display:'grid',placeItems:'center',marginBottom:10,overflow:'hidden'}}>{src?<img src={src} alt="" referrerPolicy="no-referrer" loading="lazy" style={{maxHeight:120,maxWidth:'100%',objectFit:'contain'}} onError={e=>{e.currentTarget.style.display='none'}}/>:<span style={{color:'#889'}}>Görsel yok</span>}</div>;
 
