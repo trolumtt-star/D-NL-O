@@ -1,4 +1,4 @@
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {extract,extractGeneric} from '@/lib/gemini';
+import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {extract,extractGeneric} from '@/lib/gemini';import {pauseBusiness} from '@/lib/vapi';
 export const maxDuration=60;
 const ph=s=>{const d=String(s||'').replace(/\D/g,'');return d.length>=10&&d.length<=13?(d.length===10&&d[0]==='5'?'0'+d:d):null;};
 const today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Istanbul'});
@@ -23,8 +23,14 @@ export async function POST(req){
   const {data:cid,error}=await adminSb.rpc('record_call',{p_business:bid,p_call:call.id,p_phone:call.customer?.number||null,p_sec:sec,p_name:v.customerName||null,p_orders:v.orders||null,p_address:v.address||null,p_summary:m.summary||m.analysis?.summary||null,p_transcript:transcript});
   if(error){await log('reddedildi',bid,call.id,'Kayıt yazılamadı: '+error.message);return NextResponse.json({error:error.message},{status:500});}
   if(!cid)return NextResponse.json({ok:true,duplicate:true});
-  // 2) Gemini ile ayıkla, sonra aynı kaydı doldur
-  const {data:bz}=await adminSb.from('businesses').select('vertical').eq('id',bid).single();
+  // 2) Kota bu çağrıyla bittiyse, Vapi'deki numarayı gerçekten kapat (kota bitti asistanına çevir)
+  const {data:bz}=await adminSb.from('businesses').select('vertical,status,vapi_paused,vapi_phone_id,vapi_assistant_id').eq('id',bid).single();
+  if(bz?.status==='suspended'&&!bz.vapi_paused&&bz.vapi_phone_id){
+   const pr=await pauseBusiness(bz,new URL(req.url).origin);
+   if(pr.ok)await adminSb.from('businesses').update({vapi_paused:true}).eq('id',bid);
+   else if(!pr.skipped)await log('vapi_pause_hata',bid,call.id,'Kota bitti ama Vapi numarası kapatılamadı: '+pr.error);
+  }
+  // 3) Gemini ile ayıkla, sonra aynı kaydı doldur
   if(bz?.vertical&&bz.vertical!=='restaurant'){
    const {data:vc}=await adminSb.from('verticals').select('config').eq('id',bz.vertical).single();
    const gx=await extractGeneric(transcript,today(),vc?.config?.fields||[]);if(gx.error)await log('gemini_error',bid,call.id,gx.error);
