@@ -12,7 +12,12 @@ export async function POST(req){
  if(!bid){await log('reddedildi',null,call.id,'İşletme bulunamadı. Adres yanlış veya araç adresi kullanılmış, ya da assistant ID eşleşmiyor.');return NextResponse.json({ok:true,error:'business_not_found'});}
  try{
   const sec=Math.round(m.durationSeconds??((new Date(m.endedAt)-new Date(m.startedAt))/1000))||0;
-  const transcript=m.transcript||m.artifact?.transcript||(m.artifact?.messages||[]).filter(x=>x.role==='user'||x.role==='bot').map(x=>x.role+': '+x.message).join('\n')||null;
+  // Vapi'nin end-of-call-report olayında transcript iki yerde gelir, sırayla kontrol ediyoruz:
+  const t1=body?.message?.transcript||null;           // body.message.transcript
+  const t2=body?.message?.artifact?.transcript||null; // body.message.artifact.transcript
+  const msgJoin=(arr)=>(arr||[]).filter(x=>x?.role==='user'||x?.role==='bot'||x?.role==='assistant').map(x=>x.role+': '+(x.message||x.content||'')).join('\n').trim()||null;
+  const transcript=t1||t2||msgJoin(m.artifact?.messages)||msgJoin(m.artifact?.messagesOpenAIFormatted)||null;
+  if(!t1&&!t2)await log('transcript_missing',bid,call.id,`body.message.transcript ve body.message.artifact.transcript ikisi de boş geldi. Gelen alanlar: ${Object.keys(m).join(', ')}${m.artifact?' | artifact alanları: '+Object.keys(m.artifact).join(', '):''}`);
   const v=m.analysis?.structuredData||{};
   // 1) kaydı hemen yaz (kota düşer, çağrı panelde görünür)
   const {data:cid,error}=await adminSb.rpc('record_call',{p_business:bid,p_call:call.id,p_phone:call.customer?.number||null,p_sec:sec,p_name:v.customerName||null,p_orders:v.orders||null,p_address:v.address||null,p_summary:m.summary||m.analysis?.summary||null,p_transcript:transcript});
