@@ -8,7 +8,7 @@ export async function POST(req){try{await requireAdmin(req);const b=await req.js
  if(b.vertical&&b.vertical!=='restaurant'){const {data:v}=await adminSb.from('verticals').select('config').eq('id',b.vertical).maybeSingle();const sv=(v?.config?.services||[]).map(x=>({business_id:data.id,name:x.n,duration_minutes:x.d||30}));if(sv.length)await adminSb.from('services').insert(sv);}
  return NextResponse.json({id:data.id});}catch(e){return err(e);}}
 export async function PATCH(req){try{await requireAdmin(req);const {id,reset,password,...p}=await req.json();
- const ok=['name','status','quota_minutes_total','vapi_assistant_id','vapi_phone_number','vapi_phone_id','phone_number','table_count','plan','vertical'],d={};
+ const ok=['name','status','quota_minutes_total','vapi_assistant_id','vapi_phone_number','vapi_phone_id','phone_number','table_count','plan','vertical','email','business_type'],d={};
  ok.forEach(k=>{if(k in p)d[k]=p[k]===''?null:p[k];});
  if(reset)Object.assign(d,{quota_minutes_used:0,quota_seconds_used:0,quota_reset_at:new Date(Date.now()+30*864e5).toISOString(),status:'active'});
  if(password){const {data}=await adminSb.from('businesses').select('owner_id').eq('id',id).single();const {error}=await adminSb.auth.admin.updateUserById(data.owner_id,{password});if(error)throw error;}
