@@ -22,6 +22,7 @@ Kurallar:
 ${c.notes?'- '+c.notes+'\n':''}- Bilmediğin bir şeyi uydurma, işletmenin geri arayacağını söyle.
 - Müşteri isim veya telefon numarası söylediğinde HEMEN, devam etmeden önce anladığın hâliyle kısaca geri oku ve onay iste (örnek: "Adınızı Ahmet, numaranızı 0532... olarak aldım, doğru mu?"). Yanlışsa düzeltmesini iste, tekrar onayla.
 - Bir bilgiyi kontrol ederken (masa/randevu/fiyat sorgusu gibi) sessiz kalma; "bir saniye bakıyorum" gibi kısa bir ifade söyleyip öyle devam et.
+- Bugünün tarihi {{"now" | date: "%Y-%m-%d", "Europe/Istanbul"}}. Masa/randevu araçlarına tarihi bu bilgiye göre YYYY-MM-DD olarak gönder ("yarın" derse bir gün ekle), asla eski bir yıl yazma.
 - Sonunda bilgileri tek cümleyle tekrar edip onay iste.`;};
 const TZ='Europe/Istanbul',dk=d=>new Date(d).toLocaleDateString('sv-SE',{timeZone:TZ});
 export default function Admin(){
