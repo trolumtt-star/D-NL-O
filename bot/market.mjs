@@ -2,7 +2,7 @@
 import {chromium} from 'playwright';import fs from 'node:fs';
 const {SUPABASE_URL:SB,SUPABASE_SERVICE_ROLE_KEY:KEY,GEMINI_API_KEY:GK}=process.env;
 const BASE=process.env.MARKET_URL||'https://uyguno.com',MODEL=process.env.GEMINI_MODEL||'gemini-3.8-flash';
-const UA=process.env.BOT_UA||'YankiAI-FiyatTakip/1.0 (izinli, gunde 1 sorgu)';
+const UA=process.env.BOT_UA||'DinlioAI-FiyatTakip/1.0 (izinli, gunde 1 sorgu)';
 const EXTRA=(()=>{try{return JSON.parse(process.env.MARKET_EXTRA_HEADERS||'{}');}catch{return {};}})();
 const H={apikey:KEY,Authorization:'Bearer '+KEY,'content-type':'application/json'};
 const rest=(p,o={})=>fetch(SB+'/rest/v1/'+p,{...o,headers:{...H,...o.headers}});
