@@ -1,6 +1,5 @@
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {extract,extractGeneric} from '@/lib/gemini';import {pauseBusiness} from '@/lib/vapi';
+import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {ayikla,bekleyenleriOku} from '@/lib/ayikla';import {pauseBusiness} from '@/lib/vapi';
 export const maxDuration=60;
-const ph=s=>{const d=String(s||'').replace(/\D/g,'');return d.length>=10&&d.length<=13?(d.length===10&&d[0]==='5'?'0'+d:d):null;};
 const today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Istanbul'});
 const log=(type,bid,cid,error)=>adminSb.from('webhook_events').insert({type,business_id:bid||null,vapi_call_id:cid||null,payload:{error}});
 export async function POST(req){
@@ -30,21 +29,10 @@ export async function POST(req){
    if(pr.ok)await adminSb.from('businesses').update({vapi_paused:true}).eq('id',bid);
    else if(!pr.skipped)await log('vapi_pause_hata',bid,call.id,'Kota bitti ama Vapi numarası kapatılamadı: '+pr.error);
   }
-  // 3) Gemini ile ayıkla, sonra aynı kaydı doldur
-  if(bz?.vertical&&bz.vertical!=='restaurant'){
-   const {data:vc}=await adminSb.from('verticals').select('config').eq('id',bz.vertical).single();
-   if(!transcript)return NextResponse.json({ok:true,empty:true});
-   const gx=await extractGeneric(transcript,today(),vc?.config?.fields||[]);if(gx.error)await log('gemini_error',bid,call.id,gx.error);
-   const d=gx.data||{},ex=Object.fromEntries(Object.entries(d).filter(([k,v])=>v!=null&&v!==''&&k!=='customerName'&&k!=='statedPhone'));
-   await adminSb.from('calls').update({customer_name:d.customerName||null,orders:d.orders||null,address:d.address||d.deliveryAddress||null,stated_phone:ph(d.statedPhone),extracted:Object.keys(ex).length?ex:null}).eq('id',cid);
-   return NextResponse.json({ok:true});}
-  if(!transcript)return NextResponse.json({ok:true,empty:true}); // müşteri konuşmadan kapattı
-  const g=await extract(transcript,today());
-  if(g.error)await log('gemini_error',bid,call.id,g.error);
-  const sd={...v,...g.data};
-  const sp=ph(sd.statedPhone);
-  if(sd.customerName||sd.orders||sd.address||sp)await adminSb.from('calls').update({customer_name:sd.customerName||null,orders:sd.orders||null,address:sd.address||null,stated_phone:sp}).eq('id',cid);
-  const tn=parseInt(String(sd.tableNumber||'').replace(/\D/g,''));
-  if(tn&&sd.reservationTime)await adminSb.rpc('book_table',{p_business:bid,p_date:sd.reservationDate||today(),p_time:String(sd.reservationTime).padStart(5,'0'),p_name:sd.customerName||null,p_phone:sp||call.customer?.number||null,p_size:parseInt(sd.partySize)||null,p_table:tn,p_call:cid,p_source:'vapi'});
-  return NextResponse.json({ok:true});
+  // 3) Gemini ile ayıkla, sonra aynı kaydı doldur (başarısız olursa 'okunamadi' işaretlenir ve sonra tekrar denenir)
+  const t0=Date.now();
+  const r=await ayikla({bid,cid,transcript,vertical:bz?.vertical,v,callerPhone:call.customer?.number||null,vapiCallId:call.id,gun:today()});
+  // 4) Gemini şu an çalışıyorsa, bu işletmenin daha önce okunamamış çağrılarından birini de toparla
+  if(r.ok&&!r.bos&&Date.now()-t0<12000)await bekleyenleriOku({bid,limit:1,butce:20000});
+  return NextResponse.json({ok:true,okundu:r.ok});
  }catch(e){await log('reddedildi',bid,call.id,'Beklenmeyen hata: '+String(e.message||e).slice(0,200));return NextResponse.json({error:'internal'},{status:500});}}
