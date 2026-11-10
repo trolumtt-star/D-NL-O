@@ -1,4 +1,4 @@
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';
+import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {tariftenBul} from '@/lib/harita';
 const TZ='Europe/Istanbul',today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:TZ}),nowT=()=>new Date().toLocaleTimeString('sv-SE',{timeZone:TZ,hour:'2-digit',minute:'2-digit'});
 const log=(type,bid,error,extra)=>adminSb.from('webhook_events').insert({type,business_id:bid||null,payload:{error,...(extra||{})}});
 const pad=n=>String(n).padStart(2,'0');
@@ -16,7 +16,7 @@ export async function POST(req){
  if(sec&&hs!==sec){await log('tool_reddedildi',null,'Araç isteği reddedildi: VAPI_SECRET '+(hs?'geldi ama farklı':'hiç gelmedi')+'. Vapi > Tools > aracın Server ayarına aynı Secret Token yazılmalı.');return NextResponse.json({error:'unauthorized'},{status:401});}
  const body=await req.json(),m=body.message||body,call=m.call||{},aid=call.assistantId||m.assistant?.id;
  const bid=await resolve(req,'tools',aid);
- const {data:biz}=bid?await adminSb.from('businesses').select('status,plan,vertical').eq('id',bid).single():{data:null};
+ const {data:biz}=bid?await adminSb.from('businesses').select('status,plan,vertical,settings').eq('id',bid).single():{data:null};
  const results=[],calls=m.toolCallList||m.toolCalls||[];
  if(!bid)await log('tool_reddedildi',null,'Araç isteği geldi ama işletme bulunamadı. Araçtaki Server URL ?k= kodu yanlış/silinmiş ya da events adresi kullanılmış.');
  for(const tc of calls){
@@ -44,7 +44,11 @@ export async function POST(req){
    else if(!call.id)out={ok:false,reason:'call_id yok'};
    else{const st=String(a.phone||'').replace(/\D/g,''),sp=st.length>=10&&st.length<=13?(st.length===10&&st[0]==='5'?'0'+st:st):null;
     const {data:cid,error}=await adminSb.rpc('save_order_live',{p_business:bid,p_call:call.id,p_phone:call.customer?.number||null,p_name:a.customerName?String(a.customerName).slice(0,80):null,p_orders:or,p_address:a.address?String(a.address).slice(0,300):null,p_stated:sp});
+    if(!error&&cid&&(a.lat||a.kuryeNotu)){const {data:cr}=await adminSb.from('calls').select('extracted').eq('id',cid).single();const ek={...(cr?.extracted||{})};
+     if(+a.lat&&+a.lng)ek.konum={lat:+a.lat,lng:+a.lng};if(a.kuryeNotu)ek.kuryeNotu=String(a.kuryeNotu).slice(0,300);await adminSb.from('calls').update({extracted:ek}).eq('id',cid);}
     out=error?{ok:false,reason:error.message}:{ok:true,kayit:cid,message:'Sipariş panele düştü. Müşteriye siparişin alındığını ve teslim süresini söyle.'};}}
+  else if(name==='find_location'){const yer=Array.isArray(a.yerler)?a.yerler:String(a.yerler||a.landmarks||'').split(/,|\bve\b/).map(x=>x.trim()).filter(Boolean);
+   try{out=await tariftenBul({mahalle:a.mahalle,ilce:a.ilce,yerler:yer,tarif:a.tarif},biz.settings?.konum);}catch(e){out={ok:false,reason:'Harita şu an cevap vermedi. Müşteriden tarifi kurye notu olarak al, sipariş yine kaydedilsin.'};}}
   else out={ok:false,reason:'unknown_tool'};
   if(out&&typeof out==='object'&&!Array.isArray(out))out.bugun=today();
   await log('tool_call',bid,out?.ok===false?String(out.reason||'hata'):null,{tool:name,args:a,result:out});
