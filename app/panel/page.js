@@ -1,5 +1,5 @@
 'use client';
-import {useEffect,useRef,useState} from 'react';import {useRouter} from 'next/navigation';import {sb,live} from '@/lib/supabase';import Mfa from '@/components/Mfa';import {useUser,usedSec,fmt} from '@/lib/useAuth';import Shell,{H} from '@/components/Shell';import {csv,esc} from '@/lib/ui';
+import {useEffect,useRef,useState} from 'react';import {useRouter} from 'next/navigation';import {sb,live} from '@/lib/supabase';import Mfa from '@/components/Mfa';import EkDakika from '@/components/EkDakika';import {useUser,usedSec,fmt} from '@/lib/useAuth';import Shell,{H} from '@/components/Shell';import {csv,esc} from '@/lib/ui';
 import {DESTEK} from '@/lib/destek';
 const TZ='Europe/Istanbul',today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:TZ}),nowT=()=>new Date().toLocaleTimeString('sv-SE',{timeZone:TZ,hour:'2-digit',minute:'2-digit'}),day=d=>new Date(d).toLocaleDateString('sv-SE',{timeZone:TZ});
 const tm=t=>{const[a,b]=String(t||'0:0').split(':');return +a*60+ +b;};
@@ -53,7 +53,7 @@ export default function Panel(){
  const DAYS=[['1','Pazartesi'],['2','Salı'],['3','Çarşamba'],['4','Perşembe'],['5','Cuma'],['6','Cumartesi'],['7','Pazar']],DEFH={1:['09:00','18:00'],2:['09:00','18:00'],3:['09:00','18:00'],4:['09:00','18:00'],5:['09:00','18:00'],6:['09:00','14:00']};
  const whv=wh??{hours:b.settings?.working_hours||DEFH,slot:b.settings?.slot_minutes||30,cap:b.settings?.capacity||1};
  const saveWh=async()=>{const {error}=await sb.rpc('set_business_settings',{s:{working_hours:whv.hours,slot_minutes:+whv.slot||30,capacity:+whv.cap||1}});if(error)alert('Kaydedilemedi: '+error.message);else{alert('Çalışma saatleri kaydedildi. Asistan artık bu saatlere göre randevu verir.');setWh(null);loadB();}};
- const s=usedSec(b),t=(b.quota_minutes_total||0)*60,p=t?Math.min(100,s/t*100):0,left=Math.max(0,Math.ceil((t-s)/60));
+ const s=usedSec(b),t=((b.quota_minutes_total||0)+(b.ek_dakika||0))*60,p=t?Math.min(100,s/t*100):0,left=Math.max(0,Math.ceil((t-s)/60));
  const nm=tm(nowT()),act=x=>['pending','confirmed'].includes(x.status),td=res.filter(x=>x.reservation_date===today()&&act(x));
  const orders=calls.filter(x=>x.orders),open=orders.filter(x=>x.order_status!=='done'),tcalls=calls.filter(x=>day(x.created_at)===today());
  const busyNow=td.filter(x=>tm(x.reservation_time)<=nm&&tm(x.reservation_time)+(x.duration_minutes||120)>nm).length;
@@ -119,10 +119,11 @@ export default function Panel(){
  return <Shell brand={b.name} sub={vc?.name?vc.name+' paneli':'İşletme paneli'} items={items} tab={tab} setTab={v=>{setT(v);setQ('');}} onLogout={()=>sb.auth.signOut()} badge={{inbox:open.length,res:td.length,appt:tdA.length,alerts:alerts.filter(x=>!x.read).length}}>
  <div className="toast">{toast.map(x=><div key={x.id}>{x.t}</div>)}</div>
  {DESTEK&&<a href={'https://wa.me/'+DESTEK+'?text='+encodeURIComponent('Merhaba, '+b.name+' paneliyle ilgili yardım istiyorum.')} target="_blank" rel="noreferrer" aria-label="Destek" style={{position:'fixed',right:18,bottom:18,zIndex:50,background:'#25D366',color:'#fff',borderRadius:99,padding:'12px 16px',fontWeight:700,boxShadow:'0 6px 24px rgba(0,0,0,.4)',textDecoration:'none'}}>Destek</a>}
- {tab==='home'&&<><H t="Genel bakış" s="Canlı güncellenir, sayfayı yenilemenize gerek yok."/>{p>=80&&<div className="warn">Kotanızın %{Math.round(p)}’i kullanıldı, kalan {left} dk. Dakikanız bitmeden paketinizi yenileyin.</div>}
-  <div className="kpis"><div className="kpi"><p>Kalan dakika</p><h3>{left} dk</h3><div className="bar"><b style={{width:p+'%'}}/></div><p>{Math.floor(s/60)} dk {s%60} sn kullanıldı / {b.quota_minutes_total} dk</p></div>
+ {tab==='home'&&<><H t="Genel bakış" s="Canlı güncellenir, sayfayı yenilemenize gerek yok."/>{p>=80&&<div className="warn">Kotanızın %{Math.round(p)}’i kullanıldı, kalan {left} dk. Dakikanız bitmeden <a className="lnk" onClick={()=>document.getElementById('ekdk')?.scrollIntoView({behavior:'smooth'})}>ek dakika alın</a>.</div>}
+  <div className="kpis"><div className="kpi"><p>Kalan dakika</p><h3>{left} dk</h3><div className="bar"><b style={{width:p+'%'}}/></div><p>{Math.floor(s/60)} dk {s%60} sn kullanıldı / {b.quota_minutes_total} dk{b.ek_dakika?' + '+b.ek_dakika+' ek dk':''}</p><button style={{marginTop:8,padding:'6px 12px'}} onClick={()=>document.getElementById('ekdk')?.scrollIntoView({behavior:'smooth'})}>Ek dakika al</button></div>
   {hasA?<div className="kpi"><p>Bugün randevu</p><h3>{tdA.length}</h3></div>:<><div className="kpi"><p>Açık sipariş</p><h3>{open.length}</h3></div>{hasT&&<div className="kpi"><p>Bugün rezervasyon</p><h3>{td.length}</h3></div>}</>}<div className="kpi"><p>Bugün çağrı</p><h3>{tcalls.length}</h3></div>
   {hasT&&<div className="kpi"><p>Şu an dolu masa</p><h3>{busyNow} / {b.table_count||0}</h3></div>}<div className="kpi"><p>Ortalama görüşme</p><h3>{fmt(avg)}</h3></div></div>
+  <EkDakika tok={tok} b={b} yenile={loadB}/>
   <div className="card"><h2>Son hareketler</h2><table><tbody>{calls.slice(0,6).map(x=><tr key={x.id}><td>{x.customer_name||x.caller_phone||'-'}</td><td className="mut">{x.orders||(x.extracted&&Object.values(x.extracted).slice(0,2).join(' · '))||x.summary||'Çağrı'}</td><td className="mut">{new Date(x.created_at).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})}</td></tr>)}</tbody></table>{!calls.length&&<p className="mut">Henüz çağrı yok.</p>}</div></>}
  {tab==='tables'&&<><H t="Masalar" s="Bugünün durumu. Kırmızı masalar rezerve veya dolu, saatler yanında yazar."/><div className="card">
   {!b.table_count?<p className="mut">Masa sayınızı Ayarlar bölümünden girin.</p>:<div className="tables">{Array.from({length:b.table_count},(_,i)=>{const n=i+1,rs=td.filter(x=>x.table_number===n&&tm(x.reservation_time)+(x.duration_minutes||120)>nm).sort((x,y)=>x.reservation_time.localeCompare(y.reservation_time));

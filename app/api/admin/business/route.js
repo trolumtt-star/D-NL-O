@@ -10,12 +10,15 @@ export async function POST(req){try{await requireAdmin(req);const b=await req.js
 export async function PATCH(req){try{await requireAdmin(req);const {id,reset,password,...p}=await req.json();
  const ok=['name','status','quota_minutes_total','vapi_assistant_id','vapi_phone_number','vapi_phone_id','phone_number','table_count','plan','vertical','email','business_type'],d={};
  ok.forEach(k=>{if(k in p)d[k]=p[k]===''?null:p[k];});
+ if(reset){const {data:c}=await adminSb.from('businesses').select('quota_minutes_total,ek_dakika,quota_seconds_used').eq('id',id).single();
+  // önce paket dakikası harcanır; ek dakikanın kullanılmayan kısmı bir sonraki aya devreder
+  if(c)d.ek_dakika=Math.max(0,Math.min(c.ek_dakika||0,Math.floor(((c.quota_minutes_total+(c.ek_dakika||0))*60-(c.quota_seconds_used||0))/60)));}
  if(reset)Object.assign(d,{quota_minutes_used:0,quota_seconds_used:0,quota_reset_at:new Date(Date.now()+30*864e5).toISOString(),status:'active'});
  if(password){const {data}=await adminSb.from('businesses').select('owner_id').eq('id',id).single();const {error}=await adminSb.auth.admin.updateUserById(data.owner_id,{password});if(error)throw error;}
  // +50/+100 gibi kota artışları, işletme kota yüzünden durduysa ve artık yer açıldıysa otomatik tekrar aktifleştirsin
  if('quota_minutes_total' in d&&!('status' in d)){
-  const {data:cur}=await adminSb.from('businesses').select('status,quota_seconds_used').eq('id',id).single();
-  if(cur?.status==='suspended'&&(+d.quota_minutes_total)*60>(cur.quota_seconds_used||0))d.status='active';
+  const {data:cur}=await adminSb.from('businesses').select('status,quota_seconds_used,ek_dakika').eq('id',id).single();
+  if(cur?.status==='suspended'&&(+d.quota_minutes_total+(cur.ek_dakika||0))*60>(cur.quota_seconds_used||0))d.status='active';
  }
  if(d.status==='active')d.vapi_paused=false;
  const {error}=await adminSb.from('businesses').update({...d,updated_at:new Date().toISOString()}).eq('id',id);if(error)throw error;
