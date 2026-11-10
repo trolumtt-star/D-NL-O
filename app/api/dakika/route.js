@@ -20,9 +20,11 @@ export async function POST(req){try{const b=await requireOwner(req);const x=awai
  if(yontem==='iban'&&!process.env.ODEME_IBAN)return hata('Havale bilgisi henüz tanımlı değil, lütfen destekten yazın.');
  const {count}=await adminSb.from('dakika_siparisleri').select('id',{count:'exact',head:true}).eq('business_id',b.id).eq('durum','bekliyor').gte('created_at',new Date(Date.now()-36e5).toISOString());
  if(count>=5)return hata('Çok fazla bekleyen ödeme var, biraz sonra tekrar deneyin.',429);
+ const al=x.alici||{},alici={ad:String(al.ad||'').trim().slice(0,40),soyad:String(al.soyad||'').trim().slice(0,40),eposta:String(al.eposta||'').trim().slice(0,120),tel:String(al.tel||'').replace(/\D/g,'').slice(-10)};
+ if(alici.ad.length<2||alici.soyad.length<2||!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(alici.eposta)||!/^5\d{9}$/.test(alici.tel))return hata('Ad, soyad, e-posta ve cep telefonunu eksiksiz girin.');
  const k=await usdKur();if(!k.usd)return hata('Döviz kuru şu an alınamadı, birkaç dakika sonra tekrar deneyin.',503);
  const bi=birim(b),f=fiyat(dk,bi.usd,k.usd),kod=yeniKod();
- const {error}=await adminSb.from('dakika_siparisleri').insert({kod,business_id:b.id,dakika:dk,birim_usd:bi.usd,usd:f.usd,kur:k.usd,tl_kdvsiz:f.tl_kdvsiz,kdv:f.kdv,toplam_tl:f.toplam_tl,yontem,tur});if(error)throw error;
+ const {error}=await adminSb.from('dakika_siparisleri').insert({kod,business_id:b.id,dakika:dk,birim_usd:bi.usd,usd:f.usd,kur:k.usd,tl_kdvsiz:f.tl_kdvsiz,kdv:f.kdv,toplam_tl:f.toplam_tl,yontem,tur,alici});if(error)throw error;
  if(yontem==='iban')return NextResponse.json({kod,...f,iban:process.env.ODEME_IBAN,ad:process.env.ODEME_AD||'',banka:process.env.ODEME_BANKA||''});
- return NextResponse.json({kod,...f,form:shopierForm({kod,toplam:f.toplam_tl,urun:tur==='asim'?`Dinlio AI ${dk} dk aşım ücreti`:`Dinlio AI ${dk} ek dakika`,b,eposta:x.eposta})});}
+ return NextResponse.json({kod,...f,form:shopierForm({kod,toplam:f.toplam_tl,urun:tur==='asim'?`Dinlio AI ${dk} dk aşım ücreti`:`Dinlio AI ${dk} ek dakika`,b,alici})});}
  catch(e){return hata(e.message,e.message==='Giriş gerekli'?401:400);}}
