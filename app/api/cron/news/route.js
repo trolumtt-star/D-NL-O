@@ -1,6 +1,8 @@
 import {adminSb} from '@/lib/admin';import {runNews} from '@/lib/news';import {bekleyenleriOku} from '@/lib/ayikla';import {durdur} from '@/lib/vapi';import {odemeleriKontrol} from '@/lib/shopierPat';import {bildir} from '@/lib/bildir';
 export const maxDuration=60;export const dynamic='force-dynamic';
 export async function GET(req){
+ // Supabase ücretsiz planı 7 gün işlem görmezse durur: anahtar olmasa bile her gün küçük bir okuma yap (zararsız, veri döndürmez)
+ try{await adminSb.from('businesses').select('id',{count:'exact',head:true});}catch{}
  if(!process.env.CRON_SECRET||req.headers.get('authorization')!=='Bearer '+process.env.CRON_SECRET)return Response.json({error:'unauthorized'},{status:401});
  try{await odemeleriKontrol();}catch{}
  const {data:vade}=await adminSb.rpc('asim_vadesi_gecenler');const base=new URL(req.url).origin;
