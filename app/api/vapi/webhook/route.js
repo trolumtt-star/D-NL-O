@@ -30,6 +30,9 @@ export async function POST(req){
    else if(!pr.skipped)await log('vapi_pause_hata',bid,call.id,'Kota bitti ama Vapi numarası kapatılamadı: '+pr.error);
   }
   // 3) Gemini ile ayıkla, sonra aynı kaydı doldur (başarısız olursa 'okunamadi' işaretlenir ve sonra tekrar denenir)
+  // Asistan görüşme sırasında save_order aracıyla siparişi zaten yazdıysa Gemini'ye hiç gerek yok
+  const {data:mevcut}=await adminSb.from('calls').select('orders,customer_name').eq('id',cid).single();
+  if(mevcut?.orders&&(!bz?.vertical||bz.vertical==='restaurant'||bz.vertical==='wholesale'))return NextResponse.json({ok:true,canli:true});
   const t0=Date.now();
   const r=await ayikla({bid,cid,transcript,vertical:bz?.vertical,v,callerPhone:call.customer?.number||null,vapiCallId:call.id,gun:today()});
   // 4) Gemini şu an çalışıyorsa, bu işletmenin daha önce okunamamış çağrılarından birini de toparla
