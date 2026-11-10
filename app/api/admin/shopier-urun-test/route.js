@@ -18,9 +18,10 @@ export async function POST(req){try{await requireAdmin(req);const pat=process.en
  const f=async(m,p,b)=>{const r=await fetch(base+p,{method:m,headers:H,body:b?JSON.stringify(b):undefined,signal:AbortSignal.timeout(8000)});const t=await r.text();let j=null;try{j=JSON.parse(t);}catch{}return {durum:r.status,govde:j??t.slice(0,400)};};
  const body={title:'Dinlio deneme - silinecek'},adimlar=[];let son=null;
  let tekrar=0,onceMsg='';
- for(let i=0;i<24;i++){const r=await f('POST','/products',body);if(String(r.govde?.message)===onceMsg){if(++tekrar>=2){adimlar.push({durdu:'Aynı hata tekrarlandı'});break;}}else tekrar=0;onceMsg=String(r.govde?.message);adimlar.push({gonderilen:JSON.parse(JSON.stringify(body)),durum:r.durum,cevap:r.govde});son=r;
-  if(r.durum<300)break;const msg=String(r.govde?.message||'');const m=msg.match(/^([\w.\[\]]+) (is required|must contain at least|must|should|is invalid|has invalid|is not)/i);if(!m)break;
+ for(let i=0;i<30;i++){const r=await f('POST','/products',body);if(String(r.govde?.message)===onceMsg){if(++tekrar>=2){adimlar.push({durdu:'Aynı hata tekrarlandı'});break;}}else tekrar=0;onceMsg=String(r.govde?.message);adimlar.push({gonderilen:JSON.parse(JSON.stringify(body)),durum:r.durum,cevap:r.govde});son=r;
+  if(r.durum<300)break;const msg=String(r.govde?.message||'');const m=msg.match(/^"?([\w.\[\]]+)"? (is required|must contain at least|must|should|is invalid|has invalid|is not allowed|is not)/i);if(!m)break;
   const p=parca(m[1]);
+  if(/is not allowed|not permitted|unknown|unexpected/i.test(msg)){const ust=al(body,p.slice(0,-1))||body;delete ust[p[p.length-1]];continue;}
   const tur=msg.match(/must be (?:of type )?(?:an? )?(array|object|number|integer|string|boolean)/i),bir=msg.match(/must be one of \[([^\]]+)\]/i);
   if(bir){koy(body,p,bir[1].split(',')[0].trim());continue;}
   if(tur){const t=tur[1].toLowerCase(),v=al(body,p);koy(body,p,t==='array'?(/media|image/i.test(m[1])?[{url:RESIM}]:[]):t==='object'?{}:t==='number'||t==='integer'?(parseFloat(v)||1):t==='string'?String(v??'test'):false);continue;}
