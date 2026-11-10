@@ -15,11 +15,11 @@ export default function EkDakika({tok,b,yenile}){
   if(q){setMsg({ok:'Ödemeniz alındı, dakikalarınız hesabınıza eklendi. 🎉',iptal:'Ödeme tamamlanmadı, kartınızdan para çekilmedi.',hata:'Ödeme doğrulanamadı. Kartınızdan para çekildiyse destekten bize yazın.',bekle:'Ödeme sonucu bekleniyor.'}[q]||'');history.replaceState(null,'',location.pathname);if(q==='ok')yenile?.();}
   const ac=e=>setAcik(e.detail||'ek');window.addEventListener('ekdakika',ac);return()=>window.removeEventListener('ekdakika',ac);},[]);
  if(!v)return <div className="card" id="ekdk"><h2>Ek dakika al</h2><p className="mut">{msg||'Yükleniyor…'}</p></div>;
- const bu=v.birim.usd,kur=v.kur?.usd,yok=!v.shopier&&!v.iban;
+ const bu=v.birim.usd,kur=v.kur?.usd,yok=!v.shopier&&!v.iban,kd=v.kdv??0.2,kdvY=kd?' + KDV':'';
  return <div className="card" id="ekdk"><div className="row"><h2 style={{margin:0}}>Ek dakika al</h2>{!yok&&kur&&<button onClick={()=>setAcik('ek')}>Ek dakika al</button>}</div>
-  <p className="mut" style={{marginTop:6}}>{v.birim.paket} paketinizdeki fiyatla: dakikası <b>${bu}</b> + KDV{kur?` (≈ ${tl(bu*kur*1.2)} KDV dahil)`:''}. Ek dakikalar paket dakikanız bittikten sonra kullanılır, kullanılmayanlar sonraki aya devreder.</p>
+  <p className="mut" style={{marginTop:6}}>{v.birim.paket} paketinizdeki fiyatla: dakikası <b>${bu}</b>{kdvY}{kur?` (≈ ${tl(bu*kur*(1+kd))}${kd?' KDV dahil':''})`:''}. Ek dakikalar paket dakikanız bittikten sonra kullanılır, kullanılmayanlar sonraki aya devreder.</p>
   {v.asim?.borcDk>0&&<div style={{marginTop:10,padding:14,borderRadius:12,border:'1px solid rgba(255,31,61,.55)',background:'var(--redSoft)'}}>
-   <b>Aşım ücreti: {v.asim.borcDk} dk{v.asim.borc?` · ${tl(v.asim.borc.toplam_tl)} (KDV dahil)`:''}</b>
+   <b>Aşım ücreti: {v.asim.borcDk} dk{v.asim.borc?` · ${tl(v.asim.borc.toplam_tl)}${kd?' (KDV dahil)':''}`:''}</b>
    <p className="mut" style={{marginTop:4}}>Paket dakikanız bitti, asistan aşım hakkınızla çalışmaya devam etti.{v.asim.son?` Son ödeme: ${new Date(v.asim.son).toLocaleDateString('tr-TR',{day:'numeric',month:'long'})}. Ödenmezse asistan durur.`:''} Ödeyince kilitli siparişleriniz hemen açılır.</p>
    {!yok&&kur?<button style={{marginTop:10}} onClick={()=>setAcik('asim')}>Aşım ücretini öde</button>:<p className="mut" style={{marginTop:6}}>Ödeme için sağ alttaki Destek butonundan bize yazın.</p>}</div>}
   {msg&&<div style={{marginTop:8,padding:'10px 14px',borderRadius:12,background:'var(--soft)',border:'1px solid var(--line)'}}>{msg}</div>}
@@ -30,12 +30,12 @@ export default function EkDakika({tok,b,yenile}){
  </div>;}
 
 function Pencere({v,b,tur,api,kapat,setMsg}){
- const bu=v.birim.usd,kur=v.kur.usd,asim=tur==='asim';
+ const bu=v.birim.usd,kur=v.kur.usd,asim=tur==='asim',kd=v.kdv??0.2;
  const [adim,setAdim]=useState(asim?2:1),[sec,setSec]=useState(100),[ozel,setOzel]=useState(''),[yontem,setY]=useState(v.shopier?'shopier':'iban'),[busy,setBusy]=useState(false),[hata,setHata]=useState(''),[iban,setIban]=useState(null),[kop,setKop]=useState('');
  const k0=oku(),[bi,setBi]=useState({ad:k0.ad||'',soyad:k0.soyad||'',eposta:k0.eposta||(b?.email&&!/@isletme\.panel$/.test(b.email)?b.email:''),tel:k0.tel||String(b?.phone_number||'').replace(/\D/g,'').slice(-10)});
  useEffect(()=>{const e=x=>x.key==='Escape'&&kapat();addEventListener('keydown',e);document.body.style.overflow='hidden';return()=>{removeEventListener('keydown',e);document.body.style.overflow='';};},[]);
  const dk=asim?v.asim.borcDk:sec==='ozel'?Math.round(+ozel||0):sec,gec=asim||(dk>=v.enAz&&dk<=v.enCok);
- const f=gec&&dk?(()=>{const usd=Math.round(dk*bu*100)/100,t=Math.round(usd*kur*100)/100,k=Math.round(t*.2*100)/100;return {usd,t,k,top:Math.round((t+k)*100)/100};})():null;
+ const f=gec&&dk?(()=>{const usd=Math.round(dk*bu*100)/100,t=Math.round(usd*kur*100)/100,k=Math.round(t*kd*100)/100;return {usd,t,k,top:Math.round((t+k)*100)/100};})():null;
  const telOk=/^5\d{9}$/.test(bi.tel.replace(/\D/g,'').slice(-10)),mailOk=/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(bi.eposta.trim());
  const bilgiOk=bi.ad.trim().length>=2&&bi.soyad.trim().length>=2&&mailOk&&telOk;
  const ode=async()=>{setBusy(true);setHata('');yaz(bi);try{const j=await api('POST',{...(asim?{tur:'asim'}:{dakika:dk}),yontem,alici:{...bi,tel:bi.tel.replace(/\D/g,'').slice(-10)}});
@@ -46,7 +46,7 @@ function Pencere({v,b,tur,api,kapat,setMsg}){
  const In=({k,l,...p})=><label style={{display:'block'}}>{l}<input value={bi[k]} onChange={e=>setBi({...bi,[k]:e.target.value})} {...p}/></label>;
  const Ozet=()=>f&&<div style={{padding:12,borderRadius:12,background:'var(--soft)',border:'1px solid var(--line)',marginTop:12}}>
   <div className="row"><span className="mut">{dk} dk{asim?' aşım':' ek dakika'} × ${bu}</span><span>${f.usd.toFixed(2)}</span></div>
-  <div className="row"><span className="mut">Tutar (kur {kur.toLocaleString('tr-TR')})</span><span>{tl(f.t)}</span></div><div className="row"><span className="mut">KDV %20</span><span>{tl(f.k)}</span></div>
+  <div className="row"><span className="mut">Tutar (kur {kur.toLocaleString('tr-TR')})</span><span>{tl(f.t)}</span></div>{kd>0&&<div className="row"><span className="mut">KDV %{Math.round(kd*100)}</span><span>{tl(f.k)}</span></div>}
   <div className="row" style={{marginTop:4}}><b>Ödenecek</b><b style={{fontSize:'1.25rem'}}>{tl(f.top)}</b></div></div>;
  const adimlar=asim?['Bilgiler','Ödeme']:['Miktar','Bilgiler','Ödeme'],aktif=asim?adim-2:adim-1;
  return <div role="dialog" aria-modal="true" aria-label="Ek dakika satın al" onClick={e=>e.target===e.currentTarget&&!busy&&kapat()} style={{position:'fixed',inset:0,zIndex:200,background:'rgba(0,0,0,.7)',backdropFilter:'blur(4px)',display:'grid',placeItems:'center',padding:16,overflowY:'auto'}}>
@@ -57,7 +57,7 @@ function Pencere({v,b,tur,api,kapat,setMsg}){
 
    {adim===1&&<>
     <div className="tgrid" style={{gridTemplateColumns:'repeat(2,1fr)',gap:10}}>
-     {v.secenekler.map(o=><button key={o.dakika} type="button" className={sec===o.dakika?'':'g'} onClick={()=>setSec(o.dakika)} style={{padding:'14px 12px',textAlign:'left',lineHeight:1.35}}><b style={{fontSize:'1.15rem'}}>{o.dakika} dk</b><br/>{tl(o.toplam_tl)}<br/><small style={{opacity:.75}}>KDV dahil</small></button>)}
+     {v.secenekler.map(o=><button key={o.dakika} type="button" className={sec===o.dakika?'':'g'} onClick={()=>setSec(o.dakika)} style={{padding:'14px 12px',textAlign:'left',lineHeight:1.35}}><b style={{fontSize:'1.15rem'}}>{o.dakika} dk</b><br/>{tl(o.toplam_tl)}<br/><small style={{opacity:.75}}>{kd?'KDV dahil':'\u00a0'}</small></button>)}
      <button type="button" className={sec==='ozel'?'':'g'} onClick={()=>setSec('ozel')} style={{padding:'14px 12px',textAlign:'left',lineHeight:1.35}}><b style={{fontSize:'1.15rem'}}>Özel miktar</b><br/>istediğiniz kadar<br/><small style={{opacity:.75}}>en az {v.enAz} dk</small></button>
     </div>
     {sec==='ozel'&&<label style={{display:'block',marginTop:12}}>Kaç dakika?<input autoFocus type="number" inputMode="numeric" min={v.enAz} max={v.enCok} value={ozel} onChange={e=>setOzel(e.target.value)} placeholder="ör. 150"/></label>}
@@ -85,7 +85,7 @@ function Pencere({v,b,tur,api,kapat,setMsg}){
     <p className="mut" style={{fontSize:'.78rem',marginTop:8}}>Tutar şu anki TCMB kuruyla hesaplandı. Kart bilgileriniz bize gelmez, ödeme Shopier üzerinden alınır.</p></>}
 
    {adim===4&&iban&&<>
-    <p><b>{iban.dakika} dk · {tl(iban.toplam_tl)}</b> (KDV dahil)</p>
+    <p><b>{iban.dakika} dk · {tl(iban.toplam_tl)}</b> {kd?'(KDV dahil)':''}</p>
     <p style={{marginTop:6}}>Aşağıdaki hesaba havale/EFT yapın. <b>Açıklamaya mutlaka bu kodu yazın:</b></p>
     {[['Açıklama kodu',iban.kod,'k'],['IBAN',iban.iban,'i'],['Alıcı',iban.ad,'a'],['Tutar',String(iban.toplam_tl).replace('.',','),'t']].filter(x=>x[1]).map(([l,x,n])=><div key={n} className="row" style={{justifyContent:'flex-start',gap:8,marginTop:6,flexWrap:'wrap'}}><span className="mut" style={{minWidth:100}}>{l}</span><b style={{fontFamily:'monospace',wordBreak:'break-all'}}>{x}</b><button className="g" style={{padding:'4px 10px'}} onClick={()=>kopyala(x,n)}>{kop===n?'Kopyalandı ✓':'Kopyala'}</button></div>)}
     {iban.banka&&<p className="mut" style={{marginTop:6}}>Banka: {iban.banka}</p>}

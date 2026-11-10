@@ -1,13 +1,13 @@
 import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {requireOwner} from '@/lib/owner';
-import {usdKur} from '@/lib/kur';import {birim,fiyat,SECENEK,EN_AZ,EN_COK} from '@/lib/ekdakika';import {shopierForm} from '@/lib/shopier';
+import {usdKur} from '@/lib/kur';import {kdvOrani} from '@/lib/sistem';import {birim,fiyat,SECENEK,EN_AZ,EN_COK} from '@/lib/ekdakika';import {shopierForm} from '@/lib/shopier';
 export const dynamic='force-dynamic';
 const hata=(m,s=400)=>NextResponse.json({error:m},{status:s});
 const yeniKod=()=>'DN'+Date.now().toString(36).toUpperCase().slice(-6)+Math.random().toString(36).slice(2,6).toUpperCase();
 const borc=b=>Math.max(0,Math.ceil(((b.quota_seconds_used||0)-((b.quota_minutes_total||0)+(b.ek_dakika||0))*60)/60));
-export async function GET(req){try{const b=await requireOwner(req);const k=await usdKur(),bi=birim(b),bd=borc(b);
+export async function GET(req){try{const b=await requireOwner(req);const [k,kd]=await Promise.all([usdKur(),kdvOrani()]),bi=birim(b),bd=borc(b);
  const {data:sp}=await adminSb.from('dakika_siparisleri').select('kod,dakika,toplam_tl,yontem,durum,tur,created_at,paid_at').eq('business_id',b.id).order('created_at',{ascending:false}).limit(8);
- return NextResponse.json({birim:bi,kur:k,secenekler:k.usd?SECENEK.map(d=>fiyat(d,bi.usd,k.usd)):[],enAz:EN_AZ,enCok:EN_COK,
-  shopier:!!(process.env.SHOPIER_API_KEY&&process.env.SHOPIER_API_SECRET),iban:!!process.env.ODEME_IBAN,siparisler:sp||[],asim:{acik:!!b.settings?.asim?.acik,limit_dk:b.settings?.asim?.limit_dk||0,borcDk:bd,borc:bd&&k.usd?fiyat(bd,bi.usd,k.usd):null,son:b.settings?.asim_son||null}});}
+ return NextResponse.json({birim:bi,kur:k,kdv:kd,secenekler:k.usd?SECENEK.map(d=>fiyat(d,bi.usd,k.usd,kd)):[],enAz:EN_AZ,enCok:EN_COK,
+  shopier:!!(process.env.SHOPIER_API_KEY&&process.env.SHOPIER_API_SECRET),iban:!!process.env.ODEME_IBAN,siparisler:sp||[],asim:{acik:!!b.settings?.asim?.acik,limit_dk:b.settings?.asim?.limit_dk||0,borcDk:bd,borc:bd&&k.usd?fiyat(bd,bi.usd,k.usd,kd):null,son:b.settings?.asim_son||null}});}
  catch(e){return hata(e.message,401);}}
 export async function POST(req){try{const b=await requireOwner(req);const x=await req.json();
  if(x.islem==='bildirdim'){const {error}=await adminSb.from('dakika_siparisleri').update({durum:'bildirildi'}).eq('kod',String(x.kod||'')).eq('business_id',b.id).eq('durum','bekliyor');if(error)throw error;return NextResponse.json({ok:true});}
@@ -22,8 +22,8 @@ export async function POST(req){try{const b=await requireOwner(req);const x=awai
  if(count>=5)return hata('Çok fazla bekleyen ödeme var, biraz sonra tekrar deneyin.',429);
  const al=x.alici||{},alici={ad:String(al.ad||'').trim().slice(0,40),soyad:String(al.soyad||'').trim().slice(0,40),eposta:String(al.eposta||'').trim().slice(0,120),tel:String(al.tel||'').replace(/\D/g,'').slice(-10)};
  if(alici.ad.length<2||alici.soyad.length<2||!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(alici.eposta)||!/^5\d{9}$/.test(alici.tel))return hata('Ad, soyad, e-posta ve cep telefonunu eksiksiz girin.');
- const k=await usdKur();if(!k.usd)return hata('Döviz kuru şu an alınamadı, birkaç dakika sonra tekrar deneyin.',503);
- const bi=birim(b),f=fiyat(dk,bi.usd,k.usd),kod=yeniKod();
+ const [k,kd]=await Promise.all([usdKur(),kdvOrani()]);if(!k.usd)return hata('Döviz kuru şu an alınamadı, birkaç dakika sonra tekrar deneyin.',503);
+ const bi=birim(b),f=fiyat(dk,bi.usd,k.usd,kd),kod=yeniKod();
  const {error}=await adminSb.from('dakika_siparisleri').insert({kod,business_id:b.id,dakika:dk,birim_usd:bi.usd,usd:f.usd,kur:k.usd,tl_kdvsiz:f.tl_kdvsiz,kdv:f.kdv,toplam_tl:f.toplam_tl,yontem,tur,alici});if(error)throw error;
  if(yontem==='iban')return NextResponse.json({kod,...f,iban:process.env.ODEME_IBAN,ad:process.env.ODEME_AD||'',banka:process.env.ODEME_BANKA||''});
  return NextResponse.json({kod,...f,form:shopierForm({kod,toplam:f.toplam_tl,urun:tur==='asim'?`Dinlio AI ${dk} dk aşım ücreti`:`Dinlio AI ${dk} ek dakika`,b,alici})});}
