@@ -8,7 +8,7 @@ export default function AsimAyar({tok,yenile}){
  const [v,setV]=useState(null),[d,setD]=useState(null),[acik,setAcik]=useState(false),[lim,setLim]=useState(100),[msg,setMsg]=useState(''),[busy,setBusy]=useState(false);
  const H=async()=>({'content-type':'application/json',authorization:'Bearer '+await tok()});
  useEffect(()=>{(async()=>{try{const [a,b]=await Promise.all([fetch('/api/ayarlar',{headers:await H()}).then(r=>r.json()),fetch('/api/dakika',{headers:await H()}).then(r=>r.json())]);
-  setV(a);setD(b);setAcik(!!a.asim?.acik);setLim(a.asim?.limit_dk||100);}catch{}})();},[]);
+  setV(a);setD(b);setAcik(!!a.asim?.acik);setLim(Math.min(a.asim?.limit_dk||100,a.asim?.tavan||100));}catch{}})();},[]);
  if(!v||!d)return null;
  const bu=d.birim?.usd||0,kur=d.kur?.usd,usd=Math.round(lim*bu*100)/100,kd=d.kdv??0.2;
  const kaydet=async(yeni)=>{setBusy(true);setMsg('');try{const r=await fetch('/api/ayarlar',{method:'POST',headers:await H(),body:JSON.stringify({islem:'asim',acik:yeni,limit_dk:+lim})});const j=await r.json();if(!r.ok)throw new Error(j.error);
@@ -19,7 +19,7 @@ export default function AsimAyar({tok,yenile}){
    <button className={acik?'':'g'} disabled={busy} onClick={()=>kaydet(true)}>Aşım açık</button>
    <button className={!acik?'':'g'} disabled={busy} onClick={()=>kaydet(false)}>Aşım kapalı</button></div>
   <label style={{display:'block',marginTop:12}}>En fazla kaç dakika aşılsın?
-   <select value={lim} onChange={e=>setLim(+e.target.value)} style={{maxWidth:220}}>{[30,50,100,200,300,500,1000].map(x=><option key={x} value={x}>{x} dakika</option>)}</select></label>
+   <select value={lim} onChange={e=>setLim(+e.target.value)} style={{maxWidth:220}}>{[30,50,100,200,300,500,1000,1500].filter(x=>x<=(v.asim?.tavan||100)).map(x=><option key={x} value={x}>{x} dakika</option>)}</select></label>
   <p className="mut" style={{marginTop:6}}>Bu limitle en fazla <b>${usd.toFixed(2)}{kd?' + KDV':''}</b>{kur?` (≈ ${tl(usd*kur*(1+kd))}${kd?' KDV dahil':''})`:''} aşım ücreti çıkar. Limit dolunca asistan durur.{acik?' Limiti değiştirdiyseniz “Aşım açık”a tekrar basıp kaydedin.':''}</p>
   <ul className="mut" style={{margin:'10px 0 0 18px',fontSize:'.88rem'}}>
    <li><b>Açıkken:</b> asistan çalışmaya devam eder. Aşım ücreti ödenene kadar o dakikalarda gelen siparişler panelde <b>kilitli (bulanık)</b> görünür, ödeyince hemen açılır. 2 hafta içinde ödenmezse asistan durur.</li>
