@@ -17,7 +17,7 @@ export async function POST(req){
   const t2=body?.message?.artifact?.transcript||null; // body.message.artifact.transcript
   const msgJoin=(arr)=>(arr||[]).filter(x=>x?.role==='user'||x?.role==='bot'||x?.role==='assistant').map(x=>x.role+': '+(x.message||x.content||'')).join('\n').trim()||null;
   const transcript=t1||t2||msgJoin(m.artifact?.messages)||msgJoin(m.artifact?.messagesOpenAIFormatted)||null;
-  if(!t1&&!t2)await log('transcript_missing',bid,call.id,`body.message.transcript ve body.message.artifact.transcript ikisi de boş geldi. Gelen alanlar: ${Object.keys(m).join(', ')}${m.artifact?' | artifact alanları: '+Object.keys(m.artifact).join(', '):''}`);
+  if(!t1&&!t2&&sec>8)await log('transcript_missing',bid,call.id,`body.message.transcript ve body.message.artifact.transcript ikisi de boş geldi. Gelen alanlar: ${Object.keys(m).join(', ')}${m.artifact?' | artifact alanları: '+Object.keys(m.artifact).join(', '):''}`);
   const v=m.analysis?.structuredData||{};
   // 1) kaydı hemen yaz (kota düşer, çağrı panelde görünür)
   const {data:cid,error}=await adminSb.rpc('record_call',{p_business:bid,p_call:call.id,p_phone:call.customer?.number||null,p_sec:sec,p_name:v.customerName||null,p_orders:v.orders||null,p_address:v.address||null,p_summary:m.summary||m.analysis?.summary||null,p_transcript:transcript});
@@ -33,10 +33,12 @@ export async function POST(req){
   // 3) Gemini ile ayıkla, sonra aynı kaydı doldur
   if(bz?.vertical&&bz.vertical!=='restaurant'){
    const {data:vc}=await adminSb.from('verticals').select('config').eq('id',bz.vertical).single();
+   if(!transcript)return NextResponse.json({ok:true,empty:true});
    const gx=await extractGeneric(transcript,today(),vc?.config?.fields||[]);if(gx.error)await log('gemini_error',bid,call.id,gx.error);
    const d=gx.data||{},ex=Object.fromEntries(Object.entries(d).filter(([k,v])=>v!=null&&v!==''&&k!=='customerName'&&k!=='statedPhone'));
    await adminSb.from('calls').update({customer_name:d.customerName||null,orders:d.orders||null,address:d.address||d.deliveryAddress||null,stated_phone:ph(d.statedPhone),extracted:Object.keys(ex).length?ex:null}).eq('id',cid);
    return NextResponse.json({ok:true});}
+  if(!transcript)return NextResponse.json({ok:true,empty:true}); // müşteri konuşmadan kapattı
   const g=await extract(transcript,today());
   if(g.error)await log('gemini_error',bid,call.id,g.error);
   const sd={...v,...g.data};

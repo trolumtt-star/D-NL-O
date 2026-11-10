@@ -30,4 +30,4 @@ export async function PATCH(req){try{await requireAdmin(req);const {id,reset,pas
  return NextResponse.json({ok:true});}catch(e){return err(e);}}
 export async function DELETE(req){try{await requireAdmin(req);const {id}=await req.json();const {data}=await adminSb.from('businesses').select('owner_id').eq('id',id).single();
  for(const t of ['reservations','calls','webhook_events'])await adminSb.from(t).delete().eq('business_id',id);
- await adminSb.from('businesses').delete().eq('id',id);if(data)await adminSb.auth.admin.deleteUser(data.owner_id);return NextResponse.json({ok:true});}catch(e){return err(e);}}
+ const {error:de}=await adminSb.from('businesses').delete().eq('id',id);if(de)throw de;if(data?.owner_id)await adminSb.auth.admin.deleteUser(data.owner_id);return NextResponse.json({ok:true});}catch(e){return err(e);}}
