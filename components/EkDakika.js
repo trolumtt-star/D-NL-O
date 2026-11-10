@@ -13,13 +13,17 @@ export default function EkDakika({tok,b,yenile}){
  const bu=v.birim.usd,kur=v.kur?.usd,dk=sec==='ozel'?Math.round(+ozel||0):sec,gec=dk>=v.enAz&&dk<=v.enCok;
  const f=kur&&gec?(()=>{const usd=Math.round(dk*bu*100)/100,t=Math.round(usd*kur*100)/100,k=Math.round(t*.2*100)/100;return {usd,t,k,top:Math.round((t+k)*100)/100};})():null;
  const kopyala=async(x,n)=>{try{await navigator.clipboard.writeText(x);}catch{}setKop(n);setTimeout(()=>setKop(''),1500);};
- const al=async()=>{setBusy(true);setMsg('');try{const j=await api('POST',{dakika:dk,yontem});
+ const al=async(tur,yon=yontem)=>{setBusy(true);setMsg('');try{const j=await api('POST',tur==='asim'?{tur,yontem:yon}:{dakika:dk,yontem:yon});
   if(j.form){const fm=document.createElement('form');fm.method='POST';fm.action=j.form.action;for(const [k,x] of Object.entries(j.form.fields)){const i=document.createElement('input');i.type='hidden';i.name=k;i.value=x;fm.appendChild(i);}document.body.appendChild(fm);fm.submit();return;}
   setIban(j);yukle();}catch(e){setMsg(e.message);}setBusy(false);};
  const bildirdim=async()=>{setBusy(true);try{await api('POST',{islem:'bildirdim',kod:iban.kod});setIban(null);setMsg('Teşekkürler! Ödemeniz kontrol edilince dakikalar hesabınıza eklenecek, Telegram bağlıysa bildirim gelecek.');yukle();}catch(e){setMsg(e.message);}setBusy(false);};
  const yok=!v.shopier&&!v.iban;
  return <div className="card" id="ekdk"><h2>Ek dakika al</h2>
   <p className="mut">{v.birim.paket} paketinizdeki fiyatla: dakikası <b>${bu.toFixed(3).replace(/0$/,'')}</b> + KDV{kur?` (≈ ${tl(bu*kur*1.2)} KDV dahil)`:''}. Ek dakikalar paket dakikanız bittikten sonra kullanılır ve kullanılmayanlar sonraki aya devreder.</p>
+  {v.asim?.borcDk>0&&!iban&&<div style={{marginTop:10,padding:14,borderRadius:12,border:'1px solid rgba(255,31,61,.55)',background:'var(--redSoft)'}}>
+   <b>Aşım ücreti: {v.asim.borcDk} dk{v.asim.borc?` · ${tl(v.asim.borc.toplam_tl)} (KDV dahil)`:''}</b>
+   <p className="mut" style={{marginTop:4}}>Paket dakikanız bittikten sonra asistan aşım hakkınızla çalışmaya devam etti.{v.asim.son?` Son ödeme: ${new Date(v.asim.son).toLocaleString('tr-TR',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})}. Ödenmezse asistan durur.`:''} Ödeyince bu dönemin kilitli konuşma kayıtları açılır.</p>
+   {(v.shopier||v.iban)&&kur?<div className="row" style={{justifyContent:'flex-start',gap:8,marginTop:10,flexWrap:'wrap'}}>{v.shopier&&<button disabled={busy} onClick={()=>al('asim','shopier')}>Kartla öde</button>}{v.iban&&<button className={v.shopier?'g':''} disabled={busy} onClick={()=>al('asim','iban')}>Havale ile öde</button>}</div>:<p className="mut" style={{marginTop:6}}>Ödeme için sağ alttaki Destek butonundan bize yazın.</p>}</div>}
   {typeof msg==='string'&&msg&&<div style={{marginTop:8,padding:"10px 14px",borderRadius:12,background:"var(--soft)",border:"1px solid var(--line)"}}>{msg}</div>}
   {iban?<div style={{marginTop:12,padding:14,borderRadius:12,border:'1px solid var(--line)',background:'var(--soft)'}}>
    <p><b>{iban.dakika} dakika · {tl(iban.toplam_tl)}</b> (KDV dahil)</p>
@@ -44,7 +48,7 @@ export default function EkDakika({tok,b,yenile}){
     {v.shopier&&<label style={{display:'flex',gap:6,alignItems:'center',margin:0}}><input type="radio" checked={yontem==='shopier'} onChange={()=>setY('shopier')} style={{width:'auto',margin:0}}/> Kart ile (Shopier)</label>}
     {v.iban&&<label style={{display:'flex',gap:6,alignItems:'center',margin:0}}><input type="radio" checked={yontem==='iban'} onChange={()=>setY('iban')} style={{width:'auto',margin:0}}/> Havale / EFT</label>}
    </div>
-   <button style={{marginTop:12}} disabled={busy||!f} onClick={al}>{busy?'Hazırlanıyor…':yontem==='shopier'?`Kartla öde · ${f?tl(f.top):''}`:`Havale bilgilerini göster · ${f?tl(f.top):''}`}</button>
+   <button style={{marginTop:12}} disabled={busy||!f} onClick={()=>al()}>{busy?'Hazırlanıyor…':yontem==='shopier'?`Kartla öde · ${f?tl(f.top):''}`:`Havale bilgilerini göster · ${f?tl(f.top):''}`}</button>
    <p className="mut" style={{fontSize:'.78rem',marginTop:6}}>Tutar ödeme anındaki TCMB kuruyla hesaplanır. Kartla ödemeler Shopier güvencesiyle alınır, kart bilgileriniz bize gelmez.</p></>}
-  {v.siparisler?.length>0&&<details style={{marginTop:12}}><summary className="mut" style={{cursor:'pointer'}}>Geçmiş ek dakika alımları</summary><table style={{marginTop:6}}><tbody>{v.siparisler.map(x=><tr key={x.kod}><td>{new Date(x.created_at).toLocaleDateString('tr-TR')}</td><td>{x.dakika} dk</td><td>{tl(x.toplam_tl)}</td><td className="mut">{x.yontem==='shopier'?'Kart':'Havale'}</td><td>{DURUM[x.durum]}</td></tr>)}</tbody></table></details>}
+  {v.siparisler?.length>0&&<details style={{marginTop:12}}><summary className="mut" style={{cursor:'pointer'}}>Geçmiş ek dakika alımları</summary><table style={{marginTop:6}}><tbody>{v.siparisler.map(x=><tr key={x.kod}><td>{new Date(x.created_at).toLocaleDateString('tr-TR')}</td><td>{x.dakika} dk{x.tur==='asim'?' (aşım)':''}</td><td>{tl(x.toplam_tl)}</td><td className="mut">{x.yontem==='shopier'?'Kart':'Havale'}</td><td>{DURUM[x.durum]}</td></tr>)}</tbody></table></details>}
  </div>;}

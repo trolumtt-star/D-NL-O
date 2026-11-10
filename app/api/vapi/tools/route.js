@@ -23,6 +23,7 @@ export async function POST(req){
   const name=tc.name||tc.function?.name;let a=tc.arguments||tc.function?.arguments||{};if(typeof a==='string'){try{a=JSON.parse(a);}catch{a={};}}
   const date=(d=>d<today()?today():d)(nd(a.date)),time=nt(a.time)||nowT();let out;
   if(!biz)out={ok:false,reason:'business_not_found'};
+  else if(biz.status==='suspended'&&['save_order','book_table','book_appointment'].includes(name))out={ok:false,reason:'quota_exhausted',message:'Bu işletmenin asistan süresi doldu, kayıt alınamıyor. Müşteriye işletmeyi doğrudan aramasını kibarca söyle ve görüşmeyi bitir.'};
   else if(name==='check_tables'){const {data,error}=await adminSb.rpc('free_tables',{p_business:bid,p_date:date,p_time:time});out=error?{ok:false,reason:error.message}:{ok:true,date,time,free_tables:data,message:data.length?`Müsait masalar: ${data.join(', ')}`:'Bu saatte boş masa yok.'};}
   else if(name==='book_table'){const {data,error}=await adminSb.rpc('book_table',{p_business:bid,p_date:date,p_time:time,p_name:a.name||null,p_phone:a.phone||call.customer?.number||null,p_size:parseInt(a.partySize)||null,p_table:parseInt(a.tableNumber)||null,p_call:null,p_source:'vapi'});out=error?{ok:false,reason:error.message}:data;if(data?.ok&&!data.duplicate)await bildir(bid,`🍽 Yeni rezervasyon\n${date} ${time}${a.name?' · '+a.name:''}${a.partySize?' · '+a.partySize+' kişi':''}${data.table_number?' · Masa '+data.table_number:''}`);}
   else if(name==='check_availability'||name==='book_appointment'){

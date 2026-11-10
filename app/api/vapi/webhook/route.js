@@ -1,4 +1,4 @@
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {ayikla,bekleyenleriOku} from '@/lib/ayikla';import {pauseBusiness} from '@/lib/vapi';
+import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {ayikla,bekleyenleriOku} from '@/lib/ayikla';import {durdur} from '@/lib/vapi';
 export const maxDuration=60;
 const today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Istanbul'});
 const log=(type,bid,cid,error)=>adminSb.from('webhook_events').insert({type,business_id:bid||null,vapi_call_id:cid||null,payload:{error}});
@@ -25,10 +25,9 @@ export async function POST(req){
   const rec=m.recordingUrl||m.artifact?.recordingUrl||m.artifact?.recording?.mono?.combinedUrl||null;if(rec)await adminSb.from('calls').update({audio_url:String(rec).slice(0,600)}).eq('id',cid);
   // 2) Kota bu çağrıyla bittiyse, Vapi'deki numarayı gerçekten kapat (kota bitti asistanına çevir)
   const {data:bz}=await adminSb.from('businesses').select('vertical,status,vapi_paused,vapi_phone_id,vapi_assistant_id').eq('id',bid).single();
-  if(bz?.status==='suspended'&&!bz.vapi_paused&&bz.vapi_phone_id){
-   const pr=await pauseBusiness(bz,new URL(req.url).origin);
-   if(pr.ok)await adminSb.from('businesses').update({vapi_paused:true}).eq('id',bid);
-   else if(!pr.skipped)await log('vapi_pause_hata',bid,call.id,'Kota bitti ama Vapi numarası kapatılamadı: '+pr.error);
+  if(bz?.status==='suspended'&&!bz.vapi_paused){
+   const pr=await durdur(bid,new URL(req.url).origin);
+   if(!pr.ok)await log('vapi_pause_hata',bid,call.id,'Kota bitti ama asistan durdurulamadı: '+JSON.stringify({tel:pr.tel?.error,asistan:pr.asistan?.error}));
   }
   // 3) Gemini ile ayıkla, sonra aynı kaydı doldur (başarısız olursa 'okunamadi' işaretlenir ve sonra tekrar denenir)
   // Asistan görüşme sırasında save_order aracıyla siparişi zaten yazdıysa Gemini'ye hiç gerek yok
