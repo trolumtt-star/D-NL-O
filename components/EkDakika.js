@@ -38,9 +38,13 @@ function Pencere({v,b,tur,api,kapat,setMsg}){
  const f=gec&&dk?(()=>{const usd=Math.round(dk*bu*100)/100,t=Math.round(usd*kur*100)/100,k=Math.round(t*kd*100)/100;return {usd,t,k,top:Math.round((t+k)*100)/100};})():null;
  const telOk=/^5\d{9}$/.test(bi.tel.replace(/\D/g,'').slice(-10)),mailOk=/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(bi.eposta.trim());
  const bilgiOk=bi.ad.trim().length>=2&&bi.soyad.trim().length>=2&&mailOk&&telOk;
- const ode=async()=>{setBusy(true);setHata('');yaz(bi);try{const j=await api('POST',{...(asim?{tur:'asim'}:{dakika:dk}),yontem,alici:{...bi,tel:bi.tel.replace(/\D/g,'').slice(-10)}});
+ const [link,setLink]=useState(null),[kod,setKod]=useState(null),[bitti,setBitti]=useState(false);
+ useEffect(()=>{if(!kod||bitti)return;const t=setInterval(async()=>{try{const r=await api('POST',{islem:'durum',kod});if(r.durum==='odendi'){setBitti(true);clearInterval(t);}}catch{}},5000);return()=>clearInterval(t);},[kod,bitti]);
+ const ode=async()=>{setBusy(true);setHata('');yaz(bi);const pen=yontem==='shopier'?window.open('about:blank','_blank'):null;try{const j=await api('POST',{...(asim?{tur:'asim'}:{dakika:dk}),yontem,alici:{...bi,tel:bi.tel.replace(/\D/g,'').slice(-10)}});
+  if(j.link){setLink(j.link);setKod(j.kod);setAdim(5);setBusy(false);if(pen&&!pen.closed)pen.location.href=j.link;return;}
+  pen?.close();
   if(j.form){const fm=document.createElement('form');fm.method='POST';fm.action=j.form.action;for(const [k,x] of Object.entries(j.form.fields)){const i=document.createElement('input');i.type='hidden';i.name=k;i.value=x;fm.appendChild(i);}document.body.appendChild(fm);fm.submit();return;}
-  setIban(j);setAdim(4);}catch(e){setHata(e.message);}setBusy(false);};
+  setIban(j);setAdim(4);}catch(e){pen?.close();setHata(e.message);}setBusy(false);};
  const bildirdim=async()=>{setBusy(true);try{await api('POST',{islem:'bildirdim',kod:iban.kod});setMsg('Teşekkürler! Havaleniz kontrol edilince dakikalar hesabınıza eklenecek.');kapat();}catch(e){setHata(e.message);setBusy(false);}};
  const kopyala=async(x,n)=>{try{await navigator.clipboard.writeText(x);}catch{}setKop(n);setTimeout(()=>setKop(''),1500);};
  const In=({k,l,...p})=><label style={{display:'block'}}>{l}<input value={bi[k]} onChange={e=>setBi({...bi,[k]:e.target.value})} {...p}/></label>;
@@ -84,6 +88,12 @@ function Pencere({v,b,tur,api,kapat,setMsg}){
     <div className="row" style={{marginTop:14,gap:8}}><button className="g" disabled={busy} onClick={()=>setAdim(2)}>Geri</button><button style={{flex:1}} disabled={busy||!f} onClick={ode}>{busy?'Yönlendiriliyor…':yontem==='shopier'?`Ödemeye geç · ${tl(f.top)}`:`Havale bilgilerini göster`}</button></div>
     <p className="mut" style={{fontSize:'.78rem',marginTop:8}}>Tutar şu anki TCMB kuruyla hesaplandı. Kart bilgileriniz bize gelmez, ödeme Shopier üzerinden alınır.</p></>}
 
+   {adim===5&&link&&(bitti?<div style={{textAlign:'center',padding:'10px 0'}}><div style={{fontSize:44}}>🎉</div><h2>Ödemeniz alındı</h2><p className="mut">{asim?'Aşım ücretiniz ödendi, kilitli siparişleriniz açıldı.':`${dk} dakika hesabınıza eklendi.`}</p><button style={{marginTop:14,width:'100%'}} onClick={()=>{kapat();location.reload();}}>Tamam</button></div>
+   :<div style={{textAlign:'center',padding:'6px 0'}}><p>Shopier ödeme sayfası <b>yeni sekmede</b> açıldı. Ödemeyi orada tamamlayın, bu pencere ödemeyi kendiliğinden algılar.</p>
+    <p className="mut" style={{marginTop:10}}>⏳ Ödeme bekleniyor…</p>
+    <a className="lb" href={link} target="_blank" rel="noopener noreferrer" style={{display:'inline-block',marginTop:12}}>Ödeme sayfası açılmadıysa buraya tıklayın</a>
+    <p className="mut" style={{fontSize:'.8rem',marginTop:12}}>Ödeme kodunuz: <b style={{fontFamily:'monospace'}}>{kod}</b>. Sayfa 2 saat geçerlidir. Ödedikten sonra bu pencereyi kapatsanız da dakikalar eklenir.</p>
+    <button className="g" style={{marginTop:12}} onClick={kapat}>Kapat</button></div>)}
    {adim===4&&iban&&<>
     <p><b>{iban.dakika} dk · {tl(iban.toplam_tl)}</b> {kd?'(KDV dahil)':''}</p>
     <p style={{marginTop:6}}>Aşağıdaki hesaba havale/EFT yapın. <b>Açıklamaya mutlaka bu kodu yazın:</b></p>
