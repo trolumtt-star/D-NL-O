@@ -42,7 +42,10 @@ export async function POST(req){try{await requireAdmin(req);const {business_id}=
  const yeniIds=[...new Set([...(m.toolIds||[]),...gerek.map(a=>ids[a]).filter(Boolean)])];
  const kurallar=gerek.map(a=>TANIM[a].k).filter(Boolean),blok='\n\n# ARAÇ KULLANIMI\n'+kurallar.join('\n');
  const msgs=(m.messages||[]).map(x=>{if(x.role!=='system')return x;let c=String(x.content||'').replace(/\n\n# (ARAÇ KULLANIMI|CANLI SİPARİŞ KAYDI|TARİFTEN ADRES BULMA)[\s\S]*?(?=\n\n# |$)/g,'');return {...x,content:c+blok};});
- const p=await j('/assistant/'+b.vapi_assistant_id,{method:'PATCH',body:JSON.stringify({model:{...m,toolIds:yeniIds,messages:msgs}})});
+ // KVKK: açılış cümlesinde yapay zeka ve kayıt bilgilendirmesi
+ const ilk=String(as.d.firstMessage||'');const bilgi=/kayd|kayıt/i.test(ilk)?ilk:(ilk?ilk.replace(/\s*$/,'')+' ':'')+'Ben yapay zeka asistanıyım, görüşmemiz hizmet kalitesi için kaydedilmektedir.';
+ const p=await j('/assistant/'+b.vapi_assistant_id,{method:'PATCH',body:JSON.stringify({model:{...m,toolIds:yeniIds,messages:msgs},...(bilgi!==ilk?{firstMessage:bilgi}:{})})});
+ if(bilgi!==ilk)sonuc.push('açılış cümlesine kayıt bilgilendirmesi eklendi');
  if(!p.ok)throw new Error('Asistana bağlanamadı: '+p.status+' '+p.t.slice(0,250));
  let yedek='gerekmedi';
  if(siparis){const sema={type:'object',properties:{customerName:S('string','Müşterinin adı'),orders:S('string','Ürünler ve adetleri'),address:S('string','Teslimat adresi'),statedPhone:S('string','Müşterinin söylediği telefon numarası'),reservationDate:S('string','Rezervasyon tarihi YYYY-AA-GG'),reservationTime:S('string','Rezervasyon saati SS:DD'),partySize:S('string','Kişi sayısı')}};

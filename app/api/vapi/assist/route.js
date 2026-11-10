@@ -16,10 +16,10 @@ export async function POST(req){
   if(m.type&&m.type!=='assistant-request')return NextResponse.json({});
   const pid=m.call?.phoneNumberId||m.phoneNumber?.id||null;
   if(!pid)return NextResponse.json({error:'phoneNumberId gelmedi'});
-  const {data:biz}=await adminSb.from('businesses').select('status,vapi_assistant_id,phone_number,name').eq('vapi_phone_id',pid).maybeSingle();
+  const {data:biz}=await adminSb.from('businesses').select('status,vapi_assistant_id,phone_number,name,settings').eq('vapi_phone_id',pid).maybeSingle();
   if(!biz)return NextResponse.json({error:'İşletme bulunamadı (vapi_phone_id eşleşmiyor)'});
   if(biz.status==='suspended'){
-   const num=e164(biz.phone_number);
+   const num=e164(biz.settings?.kota_yonlendirme||biz.phone_number);
    if(!num)return NextResponse.json({error:'İşletmenin yönlendirilecek telefon numarası (phone_number) tanımlı değil'});
    return NextResponse.json({destination:{type:'number',number:num,message:`Bu işletmenin otomatik asistan süresi bu ay için doldu, sizi ${biz.name||'işletmeye'} doğrudan bağlıyorum.`}});
   }

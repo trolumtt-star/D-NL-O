@@ -4,6 +4,7 @@ export async function POST(req){try{const b=await req.json();
  if(b.website)return NextResponse.json({ok:true});
  const name=T(b.contact_name,80),biz=T(b.business_name,100),phone=String(b.phone||'').replace(/\D/g,'');
  if(name.length<2||biz.length<2||phone.length<10||phone.length>13)return bad('Lütfen ad, işletme adı ve geçerli bir telefon numarası girin.');
+ if(!b.kvkk)return bad('Devam etmek için KVKK Aydınlatma Metni kutusunu işaretleyin.');
  const h=n=>new Date(Date.now()-n).toISOString();
  const {count:c1}=await adminSb.from('business_requests').select('id',{count:'exact',head:true}).eq('phone',phone).gte('created_at',h(864e5));
  if(c1>=3)return bad('Bu numaradan çok sayıda talep geldi, lütfen daha sonra tekrar deneyin.',429);

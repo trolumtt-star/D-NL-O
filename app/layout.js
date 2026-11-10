@@ -1,4 +1,4 @@
 import './globals.css';import Guard from '@/components/Guard';
-export const metadata={title:'Dinlio AI Paneli'};
+export const metadata={title:'Dinlio AI Paneli',icons:{icon:'/icon-192.png',apple:'/apple-touch-icon.png'},appleWebApp:{capable:true,title:'Dinlio',statusBarStyle:'black-translucent'}};
 export const viewport={themeColor:'#050505'};
 export default function L({children}){return <html lang="tr"><head><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin=""/><link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Instrument+Sans:wdth,wght@75..100,400..700&display=swap" rel="stylesheet"/></head><body><Guard/>{children}</body></html>;}
