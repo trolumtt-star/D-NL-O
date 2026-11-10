@@ -12,6 +12,8 @@ const e164=s=>{let d=String(s||'').replace(/\D/g,'');if(!d)return null;
  return '+'+d;};
 export async function POST(req){
  try{
+  const sec=process.env.VAPI_SECRET,hs=req.headers.get('x-vapi-secret')||(req.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');
+  if(sec&&hs&&hs!==sec)return NextResponse.json({error:'unauthorized'},{status:401});
   const body=await req.json(),m=body.message||body;
   if(m.type&&m.type!=='assistant-request')return NextResponse.json({});
   const pid=m.call?.phoneNumberId||m.phoneNumber?.id||null;
