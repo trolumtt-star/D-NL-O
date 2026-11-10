@@ -1,5 +1,6 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';import {useRouter} from 'next/navigation';import {sb,live} from '@/lib/supabase';import Mfa from '@/components/Mfa';import {useUser,usedSec,fmt} from '@/lib/useAuth';import Shell,{H} from '@/components/Shell';import {csv,esc} from '@/lib/ui';
+import {DESTEK} from '@/lib/destek';
 const TZ='Europe/Istanbul',today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:TZ}),nowT=()=>new Date().toLocaleTimeString('sv-SE',{timeZone:TZ,hour:'2-digit',minute:'2-digit'}),day=d=>new Date(d).toLocaleDateString('sv-SE',{timeZone:TZ});
 const tm=t=>{const[a,b]=String(t||'0:0').split(':');return +a*60+ +b;};
 const pc=v=>(v>0?'▲':v<0?'▼':'•')+' %'+Math.abs(v).toFixed(1).replace('.',',');
@@ -117,7 +118,7 @@ export default function Panel(){
   <p className="mut" style={{fontSize:'.75rem'}}>Bu bir kesin tahmin değil, geçmiş fiyatlardan çıkarılan istatistiksel eğilimdir. Ani ve öngörülemeyen olaylar fiyatı değiştirebilir. Alım kararını tek başına buna göre vermeyin.</p></div>;};
  return <Shell brand={b.name} sub={vc?.name?vc.name+' paneli':'İşletme paneli'} items={items} tab={tab} setTab={v=>{setT(v);setQ('');}} onLogout={()=>sb.auth.signOut()} badge={{inbox:open.length,res:td.length,appt:tdA.length,alerts:alerts.filter(x=>!x.read).length}}>
  <div className="toast">{toast.map(x=><div key={x.id}>{x.t}</div>)}</div>
- {process.env.NEXT_PUBLIC_DESTEK_WHATSAPP&&<a href={'https://wa.me/'+process.env.NEXT_PUBLIC_DESTEK_WHATSAPP.replace(/\D/g,'')+'?text='+encodeURIComponent('Merhaba, '+b.name+' paneliyle ilgili yardım istiyorum.')} target="_blank" rel="noreferrer" aria-label="Destek" style={{position:'fixed',right:18,bottom:18,zIndex:50,background:'#25D366',color:'#fff',borderRadius:99,padding:'12px 16px',fontWeight:700,boxShadow:'0 6px 24px rgba(0,0,0,.4)',textDecoration:'none'}}>Destek</a>}
+ {DESTEK&&<a href={'https://wa.me/'+DESTEK+'?text='+encodeURIComponent('Merhaba, '+b.name+' paneliyle ilgili yardım istiyorum.')} target="_blank" rel="noreferrer" aria-label="Destek" style={{position:'fixed',right:18,bottom:18,zIndex:50,background:'#25D366',color:'#fff',borderRadius:99,padding:'12px 16px',fontWeight:700,boxShadow:'0 6px 24px rgba(0,0,0,.4)',textDecoration:'none'}}>Destek</a>}
  {tab==='home'&&<><H t="Genel bakış" s="Canlı güncellenir, sayfayı yenilemenize gerek yok."/>{p>=80&&<div className="warn">Kotanızın %{Math.round(p)}’i kullanıldı, kalan {left} dk. Dakikanız bitmeden paketinizi yenileyin.</div>}
   <div className="kpis"><div className="kpi"><p>Kalan dakika</p><h3>{left} dk</h3><div className="bar"><b style={{width:p+'%'}}/></div><p>{Math.floor(s/60)} dk {s%60} sn kullanıldı / {b.quota_minutes_total} dk</p></div>
   {hasA?<div className="kpi"><p>Bugün randevu</p><h3>{tdA.length}</h3></div>:<><div className="kpi"><p>Açık sipariş</p><h3>{open.length}</h3></div>{hasT&&<div className="kpi"><p>Bugün rezervasyon</p><h3>{td.length}</h3></div>}</>}<div className="kpi"><p>Bugün çağrı</p><h3>{tcalls.length}</h3></div>
