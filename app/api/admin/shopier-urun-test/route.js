@@ -9,7 +9,7 @@ const tahmin=(yol,onceki)=>{const a=yol[yol.length-1].toString().toLowerCase(),u
  if(/type/.test(a))return /media/.test(ust)?(onceki==='image'?'photo':'image'):(onceki==='digital'?'virtual':'digital');
  if(/url|link|src|path/.test(a))return RESIM;if(/placement|order|position|index|sort/.test(a))return 1;
  if(/shipping|cargo/.test(a))return onceki===false?0:false;if(/description|desc/.test(a))return 'Dinlio deneme ürünü, otomatik silinecek.';
- if(/category|categories/.test(a))return [];if(/visible|listed|active|public/.test(a))return false;return 'test';};
+ if(/^media$|images?$|photos?$/.test(a))return [{url:RESIM}];if(/category|categories/.test(a))return [];if(/visible|listed|active|public/.test(a))return false;return 'test';};
 const parca=y=>y.replace(/\[(\d+)\]/g,'.$1').split('.').filter(Boolean).map(x=>/^\d+$/.test(x)?+x:x);
 const al=(o,p)=>p.reduce((x,k)=>x?.[k],o);
 const koy=(o,p,v)=>{let x=o;for(let i=0;i<p.length-1;i++){const k=p[i],sonraki=p[i+1];if(x[k]==null||typeof x[k]!=='object')x[k]=typeof sonraki==='number'?[]:{};x=x[k];}x[p[p.length-1]]=v;};
@@ -17,9 +17,12 @@ export async function POST(req){try{await requireAdmin(req);const pat=process.en
  const base=process.env.SHOPIER_API_BASE||'https://api.shopier.com/v1',H={authorization:'Bearer '+pat,accept:'application/json','content-type':'application/json'};
  const f=async(m,p,b)=>{const r=await fetch(base+p,{method:m,headers:H,body:b?JSON.stringify(b):undefined,signal:AbortSignal.timeout(8000)});const t=await r.text();let j=null;try{j=JSON.parse(t);}catch{}return {durum:r.status,govde:j??t.slice(0,400)};};
  const body={title:'Dinlio deneme - silinecek'},adimlar=[];let son=null;
- for(let i=0;i<14;i++){const r=await f('POST','/products',body);adimlar.push({gonderilen:JSON.parse(JSON.stringify(body)),durum:r.durum,cevap:r.govde});son=r;
+ for(let i=0;i<24;i++){const r=await f('POST','/products',body);adimlar.push({gonderilen:JSON.parse(JSON.stringify(body)),durum:r.durum,cevap:r.govde});son=r;
   if(r.durum<300)break;const msg=String(r.govde?.message||'');const m=msg.match(/^([\w.\[\]]+) (is required|must contain at least|must|should|is invalid|has invalid|is not)/i);if(!m)break;
   const p=parca(m[1]);
+  const tur=msg.match(/must be (?:an? )?(array|object|number|integer|string|boolean)/i),bir=msg.match(/must be one of \[([^\]]+)\]/i);
+  if(bir){koy(body,p,bir[1].split(',')[0].trim());continue;}
+  if(tur){const t=tur[1].toLowerCase(),v=al(body,p);koy(body,p,t==='array'?(/media|image/i.test(m[1])?[{url:RESIM}]:[]):t==='object'?{}:t==='number'||t==='integer'?(parseFloat(v)||1):t==='string'?String(v??'test'):false);continue;}
   if(/must contain at least/i.test(m[2])){const arr=al(body,p);const yeni=/media/i.test(m[1])?{url:RESIM}:{};if(Array.isArray(arr))arr.push(yeni);else koy(body,p,[yeni]);continue;}
   const once=JSON.stringify(body);koy(body,p,tahmin(p,al(body,p)));if(JSON.stringify(body)===once)break;}
  let silme=null;const id=son?.durum<300&&(son.govde?.id||son.govde?.data?.id);
