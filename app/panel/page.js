@@ -1,5 +1,5 @@
 'use client';
-import {useEffect,useRef,useState} from 'react';import {useRouter} from 'next/navigation';import {sb,live} from '@/lib/supabase';import {useUser,usedSec,fmt} from '@/lib/useAuth';import Shell,{H} from '@/components/Shell';import {csv,esc} from '@/lib/ui';
+import {useEffect,useRef,useState} from 'react';import {useRouter} from 'next/navigation';import {sb,live} from '@/lib/supabase';import Mfa from '@/components/Mfa';import {useUser,usedSec,fmt} from '@/lib/useAuth';import Shell,{H} from '@/components/Shell';import {csv,esc} from '@/lib/ui';
 const TZ='Europe/Istanbul',today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:TZ}),nowT=()=>new Date().toLocaleTimeString('sv-SE',{timeZone:TZ,hour:'2-digit',minute:'2-digit'}),day=d=>new Date(d).toLocaleDateString('sv-SE',{timeZone:TZ});
 const tm=t=>{const[a,b]=String(t||'0:0').split(':');return +a*60+ +b;};
 const pc=v=>(v>0?'▲':v<0?'▼':'•')+' %'+Math.abs(v).toFixed(1).replace('.',',');
@@ -209,5 +209,6 @@ export default function Panel(){
    <div className="row" style={{justifyContent:'flex-start',marginTop:8}}><input style={{maxWidth:240,margin:0}} placeholder="05xx xxx xx xx" value={yn??ay?.yonlendirme??''} onChange={e=>setYn(e.target.value)}/><button onClick={async()=>{const r=await fetch('/api/ayarlar',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+await tok()},body:JSON.stringify({islem:'yonlendirme',numara:yn??ay?.yonlendirme??''})});const j=await r.json();if(!r.ok)alert(j.error);else{alert('Kaydedildi.');setAy({...ay,yonlendirme:(yn??'').replace(/\D/g,'')});setYn(null);}}}>Kaydet</button></div></div>
   <div className="card sec2"><h2>Şifre değiştir</h2><div className="frm"><label>Yeni şifre<input type="password" autoComplete="new-password" value={pw1} onChange={e=>setPw1(e.target.value)}/></label><label>Yeni şifre (tekrar)<input type="password" autoComplete="new-password" value={pw2} onChange={e=>setPw2(e.target.value)}/></label>
    <button onClick={async()=>{if(pw1.length<8){alert('Şifre en az 8 karakter olmalı.');return;}if(pw1!==pw2){alert('Şifreler aynı değil.');return;}const {error}=await sb.auth.updateUser({password:pw1});if(error)alert('Değiştirilemedi: '+error.message);else{alert('Şifreniz değişti.');setPw1('');setPw2('');}}}>Değiştir</button></div></div>
+  <Mfa sb={sb}/>
   <div className="card"><h2>Hesap</h2><p className="mut">İşletme: {b.name}<br/>Kullanıcı adı: {b.username}<br/>Kota: {b.quota_minutes_total} dk / ay · yenileme: {b.quota_reset_at?new Date(b.quota_reset_at).toLocaleDateString('tr-TR'):'-'}</p></div></>}
  </Shell>;}
