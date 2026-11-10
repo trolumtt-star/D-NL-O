@@ -1,7 +1,7 @@
 'use client';
 // Ek dakika / aşım ödemesi. Kartta özet + "Ek dakika al" butonu; tıklayınca ekrana ödeme penceresi gelir:
 // 1) miktar  2) fatura/iletişim bilgileri  3) ödeme yöntemi -> Shopier'e yönlendirir ya da havale bilgisini gösterir.
-import {useEffect,useState} from 'react';
+import {useEffect,useState} from 'react';import {createPortal} from 'react-dom';
 const tl=x=>Number(x).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺';
 const DURUM={bekliyor:'Ödeme bekleniyor',bildirildi:'Kontrol ediliyor',odendi:'Eklendi ✓',iptal:'İptal'};
 const AK='dinlio_odeme_bilgi';
@@ -49,8 +49,8 @@ function Pencere({v,b,tur,api,kapat,setMsg}){
   <div className="row"><span className="mut">Tutar (kur {kur.toLocaleString('tr-TR')})</span><span>{tl(f.t)}</span></div>{kd>0&&<div className="row"><span className="mut">KDV %{Math.round(kd*100)}</span><span>{tl(f.k)}</span></div>}
   <div className="row" style={{marginTop:4}}><b>Ödenecek</b><b style={{fontSize:'1.25rem'}}>{tl(f.top)}</b></div></div>;
  const adimlar=asim?['Bilgiler','Ödeme']:['Miktar','Bilgiler','Ödeme'],aktif=asim?adim-2:adim-1;
- return <div role="dialog" aria-modal="true" aria-label="Ek dakika satın al" onClick={e=>e.target===e.currentTarget&&!busy&&kapat()} style={{position:'fixed',inset:0,zIndex:200,background:'rgba(0,0,0,.7)',backdropFilter:'blur(4px)',display:'grid',placeItems:'center',padding:16,overflowY:'auto'}}>
-  <div className="card" style={{width:'min(520px,100%)',margin:0,maxHeight:'calc(100vh - 32px)',overflowY:'auto',position:'relative'}}>
+ return createPortal(<div role="dialog" aria-modal="true" aria-label="Ek dakika satın al" onClick={e=>e.target===e.currentTarget&&!busy&&kapat()} style={{position:'fixed',top:0,left:0,width:'100vw',height:'100dvh',zIndex:9999,background:'rgba(0,0,0,.75)',backdropFilter:'blur(6px)',WebkitBackdropFilter:'blur(6px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16,boxSizing:'border-box'}}>
+  <div style={{width:'min(560px,100%)',maxHeight:'calc(100dvh - 32px)',overflowY:'auto',position:'relative',background:'#0e0e10',border:'1px solid rgba(255,255,255,.14)',borderRadius:20,padding:'24px 22px',boxShadow:'0 30px 90px -20px rgba(0,0,0,.9),0 0 0 1px rgba(255,31,61,.12)',transform:'none',animation:'none'}}>
    <button className="g" aria-label="Kapat" onClick={kapat} style={{position:'absolute',right:12,top:12,padding:'4px 10px'}}>✕</button>
    <h2 style={{marginRight:40}}>{asim?'Aşım ücretini öde':'Ek dakika al'}</h2>
    {adim<4&&<div className="row" style={{justifyContent:'flex-start',gap:6,margin:'6px 0 14px'}}>{adimlar.map((x,i)=><span key={x} className={'tag'+(i===aktif?' x':'')} style={{opacity:i>aktif?.5:1}}>{i+1}. {x}</span>)}</div>}
@@ -91,4 +91,4 @@ function Pencere({v,b,tur,api,kapat,setMsg}){
     {iban.banka&&<p className="mut" style={{marginTop:6}}>Banka: {iban.banka}</p>}
     {hata&&<p style={{color:'var(--redInk)',marginTop:8}}>{hata}</p>}
     <div className="row" style={{marginTop:14,gap:8}}><button className="g" onClick={kapat}>Sonra öderim</button><button style={{flex:1}} disabled={busy} onClick={bildirdim}>Ödemeyi yaptım</button></div></>}
-  </div></div>;}
+  </div></div>,document.body);}
