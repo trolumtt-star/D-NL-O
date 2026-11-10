@@ -24,5 +24,8 @@ export async function POST(req){try{await requireAdmin(req);const {business_id}=
  const m=as.d.model||{},ids=[...new Set([...(m.toolIds||[]),toolId])],msgs=(m.messages||[]).map(x=>x.role==='system'&&!String(x.content||'').includes('save_order')?{...x,content:String(x.content||'')+KURAL}:x);
  const p=await j('/assistant/'+b.vapi_assistant_id,{method:'PATCH',body:JSON.stringify({model:{...m,toolIds:ids,messages:msgs}})});
  if(!p.ok)throw new Error('Asistana bağlanamadı: '+p.status+' '+p.t.slice(0,250));
+ // 2. yedek: Vapi çağrı sonunda siparişi kendi de çıkarsın (Gemini olmasa bile end-of-call-report'ta gelir)
+ const sema={type:'object',properties:{customerName:{type:'string',description:'Müşterinin adı'},orders:{type:'string',description:'Ürünler ve adetleri, ör. 2 adana dürüm, 1 ayran'},address:{type:'string',description:'Teslimat adresi'},statedPhone:{type:'string',description:'Müşterinin söylediği telefon numarası'},reservationDate:{type:'string',description:'Rezervasyon tarihi YYYY-AA-GG'},reservationTime:{type:'string',description:'Rezervasyon saati SS:DD'},partySize:{type:'string',description:'Kişi sayısı'}}};
+ const an=await j('/assistant/'+b.vapi_assistant_id,{method:'PATCH',body:JSON.stringify({analysisPlan:{...(as.d.analysisPlan||{}),structuredDataPlan:{enabled:true,schema:sema}}})});
  await adminSb.from('businesses').update({settings:{...(b.settings||{}),save_order_tool_id:toolId}}).eq('id',b.id);
- return NextResponse.json({ok:true,toolId});}catch(e){return NextResponse.json({error:e.message},{status:e.message==='Yetkisiz'?401:400});}}
+ return NextResponse.json({ok:true,toolId,yedekAnaliz:an.ok?'açık':'açılamadı ('+an.status+')'});}catch(e){return NextResponse.json({error:e.message},{status:e.message==='Yetkisiz'?401:400});}}

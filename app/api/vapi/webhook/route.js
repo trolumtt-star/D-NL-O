@@ -22,6 +22,7 @@ export async function POST(req){
   const {data:cid,error}=await adminSb.rpc('record_call',{p_business:bid,p_call:call.id,p_phone:call.customer?.number||null,p_sec:sec,p_name:v.customerName||null,p_orders:v.orders||null,p_address:v.address||null,p_summary:m.summary||m.analysis?.summary||null,p_transcript:transcript});
   if(error){await log('reddedildi',bid,call.id,'Kayıt yazılamadı: '+error.message);return NextResponse.json({error:error.message},{status:500});}
   if(!cid)return NextResponse.json({ok:true,duplicate:true});
+  const rec=m.recordingUrl||m.artifact?.recordingUrl||m.artifact?.recording?.mono?.combinedUrl||null;if(rec)await adminSb.from('calls').update({audio_url:String(rec).slice(0,600)}).eq('id',cid);
   // 2) Kota bu çağrıyla bittiyse, Vapi'deki numarayı gerçekten kapat (kota bitti asistanına çevir)
   const {data:bz}=await adminSb.from('businesses').select('vertical,status,vapi_paused,vapi_phone_id,vapi_assistant_id').eq('id',bid).single();
   if(bz?.status==='suspended'&&!bz.vapi_paused&&bz.vapi_phone_id){
