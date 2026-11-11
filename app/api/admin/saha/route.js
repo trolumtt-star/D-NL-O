@@ -1,5 +1,5 @@
 // Saha modu: yakındaki en umutlu işletmeyi öner, ziyaret sonucunu kaydet, günlük ilerlemeyi göster.
-import {NextResponse} from 'next/server';import {adminSb,requireAdmin} from '@/lib/admin';import {yakindakiler,puanla,SEKTOR} from '@/lib/saha';
+import {NextResponse} from 'next/server';import {adminSb,requireAdmin} from '@/lib/admin';import {yakindakiler,puanla,SEKTOR,kamuMu} from '@/lib/saha';
 export const dynamic='force-dynamic';export const maxDuration=45;
 const hata=(m,s=400)=>NextResponse.json({error:m},{status:s});
 const SONUC={demo:'Demo yaptım, ilgilendi',ilgilendi:'İlgilendi, tekrar gel',sonra:'Yetkili yoktu, sonra gel',ilgilenmedi:'İlgilenmedi',kapali:'Kapalı / bulunamadı',musteri:'Müşteri oldu 🎉'};
@@ -31,6 +31,8 @@ export async function POST(req){try{await requireAdmin(req);const x=await req.js
    .gte('lat',lat-d).lte('lat',lat+d).gte('lon',lon-d*1.3).lte('lon',lon+d*1.3).limit(400);
   bulunan=(eski||[]).filter(x=>SEKTOR[x.category]);
   if(!bulunan.length)return hata((uyari||'Yakında işletme bulunamadı.')+' Birkaç saniye sonra tekrar dene.');}
+ // Devlet / belediye kurumlarını (ADSM, aile sağlığı merkezi vb.) hiçbir yoldan önerme
+ bulunan=bulunan.filter(b=>!kamuMu({name:b.name}));
  const ids=[...new Set(bulunan.map(b=>b.osm_id))];
  // 2) veritabanında olmayanları ekle (ziyaret geçmişi korunur)
  const mevcut=new Map();for(let i=0;i<ids.length;i+=150){const {data}=await adminSb.from('leads').select('id,osm_id,ziyaret_at,ziyaret_sonuc,rating_count,rating').in('osm_id',ids.slice(i,i+150));for(const r of data||[])mevcut.set(r.osm_id,r);}
