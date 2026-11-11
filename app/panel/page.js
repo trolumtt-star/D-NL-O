@@ -1,5 +1,5 @@
 'use client';
-import {useEffect,useRef,useState} from 'react';import {useRouter} from 'next/navigation';import {sb,live} from '@/lib/supabase';import Mfa from '@/components/Mfa';import EkDakika from '@/components/EkDakika';import AsimAyar from '@/components/AsimAyar';import {useUser,usedSec,fmt} from '@/lib/useAuth';import Shell,{H} from '@/components/Shell';import {csv,esc} from '@/lib/ui';
+import {useEffect,useRef,useState} from 'react';import {useRouter} from 'next/navigation';import {sb,live} from '@/lib/supabase';import Mfa from '@/components/Mfa';import CalisanPanel from '@/components/CalisanPanel';import Calisanlar from '@/components/Calisanlar';import EkDakika from '@/components/EkDakika';import AsimAyar from '@/components/AsimAyar';import {useUser,usedSec,fmt} from '@/lib/useAuth';import Shell,{H} from '@/components/Shell';import {csv,esc} from '@/lib/ui';
 import {DESTEK} from '@/lib/destek';
 const TZ='Europe/Istanbul',today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:TZ}),nowT=()=>new Date().toLocaleTimeString('sv-SE',{timeZone:TZ,hour:'2-digit',minute:'2-digit'}),day=d=>new Date(d).toLocaleDateString('sv-SE',{timeZone:TZ});
 const tm=t=>{const[a,b]=String(t||'0:0').split(':');return +a*60+ +b;};
@@ -12,7 +12,8 @@ export default function Panel(){
  const push=t=>{beep();const id=Math.random();setToast(a=>[...a,{id,t}]);setTimeout(()=>setToast(a=>a.filter(x=>x.id!==id)),8000);};
  const [kilit,setKilit]=useState([]),kilitSay=useRef(-1);
  const loadK=async()=>{const {data}=await sb.rpc('kilitli_cagrilar');const l=data||[];if(kilitSay.current>=0&&l.length>kilitSay.current)push('🔒 Yeni sipariş geldi. Görmek için aşım ücretini ödeyin.');kilitSay.current=l.length;setKilit(l);};
- const loadB=async()=>{const {data}=await sb.from('businesses').select('*').limit(1);setB(data?.[0]||false);loadK();if(data?.[0])setTc(v=>v===''?String(data[0].table_count||0):v);};
+ const [cal,setCal]=useState(null);
+ const loadB=async()=>{const {data}=await sb.from('businesses').select('*').limit(1);if(!data?.[0]){const {data:ci}=await sb.rpc('calisan_bilgi');if(ci)setCal(ci);}setB(data?.[0]||false);loadK();if(data?.[0])setTc(v=>v===''?String(data[0].table_count||0):v);};
  useEffect(()=>{if(u===null)location.replace('/login');if(!u)return;loadB();try{setSnd(localStorage.getItem('snd')!=='0');}catch{}},[u]);
  useEffect(()=>{if(!b?.id)return;const id=b.id;
   const lr=async()=>{const {data}=await sb.from('reservations').select('*').eq('business_id',id).order('reservation_date',{ascending:false}).order('reservation_time',{ascending:false}).limit(500);setR(data||[]);};
@@ -41,7 +42,7 @@ export default function Panel(){
    const {error}=await sb.from('watch_items').upsert({business_id:b.id,name:String(p.title).slice(0,80),market_url:p.url&&/^https:\/\//.test(p.url)?p.url.slice(0,490):null,market_name:p.market?String(p.market).slice(0,30):null,market_image:p.image&&/^https:\/\//.test(p.image)?p.image.slice(0,490):null,market_source:'verio-ai',market_product_id:String(p.id).slice(0,80),market_price:typeof p.price==='number'?p.price:null,alert_pct:1,market_error:null},{onConflict:'business_id,name'});
    if(error)alert('Kaydedilemedi: '+error.message);else push(`${p.title} takibe eklendi.`);};
   window.addEventListener('message',onMsg);return()=>window.removeEventListener('message',onMsg);},[tab,b?.id]);
- if(b===null)return null;if(b===false)return <div className="wrap"><p>Bu hesaba bağlı işletme yok.</p></div>;
+ if(b===null)return null;if(b===false&&cal)return <CalisanPanel sb={sb} bilgi={cal}/>;if(b===false)return <div className="wrap"><p>Bu hesaba bağlı işletme yok.</p></div>;
  const V=b.vertical||'restaurant',hasT=V==='restaurant',hasA=!['restaurant','wholesale'].includes(V),hasM=!hasA,FL=Object.fromEntries((vc?.config?.fields||[]).map(x=>[x.k,x.l]));
  const items=ITEMS.filter(([k])=>(hasT||!['tables','res'].includes(k))&&(hasM||k!=='menu')).flatMap(x=>x[0]==='home'&&hasA?[x,['appt','Randevular','◷'],['svc','Hizmetler ve ekip','✂']]:[x]).map(x=>x[0]==='inbox'&&hasA?['inbox','Çağrılar','☎']:x);
  const aDay=x=>new Date(x.starts_at).toLocaleDateString('sv-SE',{timeZone:TZ}),aTime=x=>new Date(x.starts_at).toLocaleTimeString('tr-TR',{timeZone:TZ,hour:'2-digit',minute:'2-digit'});
@@ -216,6 +217,6 @@ export default function Panel(){
    <div className="row" style={{justifyContent:'flex-start',marginTop:8}}><input style={{maxWidth:240,margin:0}} placeholder="05xx xxx xx xx" value={yn??ay?.yonlendirme??''} onChange={e=>setYn(e.target.value)}/><button onClick={async()=>{const r=await fetch('/api/ayarlar',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+await tok()},body:JSON.stringify({islem:'yonlendirme',numara:yn??ay?.yonlendirme??''})});const j=await r.json();if(!r.ok)alert(j.error);else{alert('Kaydedildi.');setAy({...ay,yonlendirme:(yn??'').replace(/\D/g,'')});setYn(null);}}}>Kaydet</button></div></div>
   <div className="card sec2"><h2>Şifre değiştir</h2><div className="frm"><label>Yeni şifre<input type="password" autoComplete="new-password" value={pw1} onChange={e=>setPw1(e.target.value)}/></label><label>Yeni şifre (tekrar)<input type="password" autoComplete="new-password" value={pw2} onChange={e=>setPw2(e.target.value)}/></label>
    <button onClick={async()=>{if(pw1.length<8){alert('Şifre en az 8 karakter olmalı.');return;}if(pw1!==pw2){alert('Şifreler aynı değil.');return;}const {error}=await sb.auth.updateUser({password:pw1});if(error)alert('Değiştirilemedi: '+error.message);else{alert('Şifreniz değişti.');setPw1('');setPw2('');}}}>Değiştir</button></div></div>
-  <AsimAyar tok={tok} yenile={loadB}/><Mfa sb={sb}/>
+  {hasA&&<Calisanlar tok={tok} rsrc={rsrc}/>}<AsimAyar tok={tok} yenile={loadB}/><Mfa sb={sb}/>
   <div className="card"><h2>Hesap</h2><p className="mut">İşletme: {b.name}<br/>Kullanıcı adı: {b.username}<br/>Kota: {b.quota_minutes_total} dk / ay · yenileme: {b.quota_reset_at?new Date(b.quota_reset_at).toLocaleDateString('tr-TR'):'-'}</p></div></>}
  </Shell>;}

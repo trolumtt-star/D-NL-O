@@ -50,7 +50,7 @@ export async function POST(req){try{await requireAdmin(req);const {business_id}=
   if(!c.ok&&sec){const a=arac(ad,T2,url,null);a.server={url,secret:sec};c=await j('/tool',{method:'POST',body:JSON.stringify(a)});}
   if(c.ok){ids[ad]=c.d.id;sonuc.push(ad+': eklendi');}else sonuc.push(ad+': HATA '+c.status+' '+c.t.slice(0,120));}
  const yeniIds=[...new Set([...(m.toolIds||[]),...gerek.map(a=>ids[a]).filter(Boolean)])];
- const kurallar=gerek.map(a=>T2[a].k).filter(Boolean),blok='\n\n# ARAÇ KULLANIMI\n'+kurallar.join('\n');
+ const kurallar=gerek.map(a=>T2[a].k).filter(Boolean),blok='\n\n# ARAÇ KULLANIMI\n'+kurallar.join('\n')+'\n- Açılış mesajında müşteriyi adıyla selamladıysan onu sistemden tanıyorsun demektir: adını yeniden sorma, bilgilerini "yine aynı ... mı?" gibi kısa teyitlerle doğrula.';
  const msgs=(m.messages||[]).map(x=>{if(x.role!=='system')return x;let c=String(x.content||'').replace(/\n\n# (ARAÇ KULLANIMI|CANLI SİPARİŞ KAYDI|TARİFTEN ADRES BULMA)[\s\S]*?(?=\n\n# |$)/g,'');return {...x,content:c+blok};});
  // KVKK: açılış cümlesinde yapay zeka ve kayıt bilgilendirmesi
  const ilk=String(as.d.firstMessage||'');const bilgi=/kayd|kayıt/i.test(ilk)?ilk:(ilk?ilk.replace(/\s*$/,'')+' ':'')+'Ben yapay zeka asistanıyım, görüşmemiz hizmet kalitesi için kaydedilmektedir.';
