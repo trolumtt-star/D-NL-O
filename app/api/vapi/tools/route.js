@@ -54,7 +54,8 @@ export async function POST(req){
    const ex={};for(const [k,v] of Object.entries(a||{})){
     if(['customerName','phone','statedPhone'].includes(k))continue;
     if(typeof v==='number'||typeof v==='boolean'){ex[k]=String(v);continue;}
-    if(typeof v==='string'&&v.trim()&&v.trim().toLowerCase()!=='bilinmiyor')ex[String(k).slice(0,40)]=v.trim().slice(0,300);}
+    if(typeof v==='string'&&v.trim()&&v.trim().toLowerCase()!=='bilinmiyor')ex[String(k).slice(0,40)]=v.trim().slice(0,300);
+    if(Object.keys(ex).length>=20)break;}
    const ad=a.customerName?String(a.customerName).slice(0,80):null,tel=a.phone?String(a.phone).replace(/[^\d+]/g,'').slice(0,20):null;
    if(!ad&&!tel&&!Object.keys(ex).length)out={ok:false,reason:'Kaydedilecek bilgi yok. Önce müşterinin adını ve isteğini öğren.'};
    else{const {data:cid,error}=await adminSb.rpc('save_request_live',{p_business:bid,p_call:call.id||null,p_phone:call.customer?.number||null,p_name:ad,p_stated:tel,p_extracted:Object.keys(ex).length?ex:null});

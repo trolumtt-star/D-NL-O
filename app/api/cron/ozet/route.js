@@ -7,6 +7,8 @@ const TZ='Europe/Istanbul',gun=d=>new Date(d).toLocaleDateString('sv-SE',{timeZo
 const gunBasi=g=>new Date(g+'T00:00:00+03:00');
 export async function GET(req){
  const sir=process.env.CRON_SECRET;if(sir&&req.headers.get('authorization')!=='Bearer '+sir)return NextResponse.json({error:'unauthorized'},{status:401});
+ // Erken tetiklenip günün yarım özetini göndermesin: Türkiye saatiyle 20:00'den önce çalışmaz
+ const saat=+new Date().toLocaleString('en-GB',{timeZone:TZ,hour:'2-digit',hour12:false});if(saat<20)return NextResponse.json({ok:true,erken:true});
  const bugun=gun(Date.now()),bas=gunBasi(bugun),son=new Date(bas.getTime()+864e5),yarinSon=new Date(son.getTime()+864e5);
  const {data:l}=await adminSb.from('businesses').select('id,name,vertical,status,quota_minutes_total,ek_dakika,quota_seconds_used,settings');
  let gonderilen=0;

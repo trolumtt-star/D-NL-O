@@ -14,7 +14,7 @@ export default function CalisanPanel({sb,bilgi}){
  const gun=d=>new Date(d).toLocaleDateString('sv-SE',{timeZone:TZ}),bugun=gun(Date.now()),yarin=gun(Date.now()+864e5);
  const liste=(l||[]).filter(x=>(af==='today'?gun(x.starts_at)===bugun:af==='tomorrow'?gun(x.starts_at)===yarin:new Date(x.starts_at)>Date.now()-36e5))
   .filter(x=>!benim||!bilgi.resource_id||x.resource_id===bilgi.resource_id);
- const durum=async(id,st)=>{if(st==='cancelled'&&!confirm('Randevu iptal edilsin mi?'))return;const {error}=await sb.from('appointments').update({status:st}).eq('id',id);setMsg(error?'Kaydedilemedi: '+error.message:'');yukle();};
+ const durum=async(id,st)=>{if(st==='cancelled'&&!confirm('Randevu iptal edilsin mi?'))return;const {error}=await sb.rpc('calisan_randevu_durum',{p_id:id,p_status:st});setMsg(error?'Kaydedilemedi: '+error.message:'');yukle();};
  return <div className="wrap" style={{maxWidth:860,margin:'0 auto',padding:'20px 14px'}}>
   <div className="row" style={{marginBottom:14}}><div><h1 style={{margin:0,fontSize:'1.3rem'}}>{bilgi.isletme}</h1><p className="mut" style={{margin:'2px 0 0'}}>Merhaba {bilgi.ad} · randevu ekranı{bilgi.resource_name?' · '+bilgi.resource_name:''}</p></div>
    <button className="g" onClick={()=>sb.auth.signOut().then(()=>location.replace('/login'))}>Çıkış</button></div>

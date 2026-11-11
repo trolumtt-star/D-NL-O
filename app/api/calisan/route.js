@@ -16,7 +16,8 @@ export async function POST(req){try{const b=await requireOwner(req);const x=awai
   if(count>=20)return hata('En fazla 20 çalışan hesabı açabilirsiniz.');
   const {data:nu,error:e1}=await adminSb.auth.admin.createUser({email:u+'@isletme.panel',password:sifre,email_confirm:true,user_metadata:{rol:'calisan',isletme:b.id}});
   if(e1)return hata(/already/i.test(e1.message)?'Bu kullanıcı adı alınmış, başka bir tane deneyin.':e1.message);
-  const rid=x.resource_id&&/^[0-9a-f-]{36}$/.test(x.resource_id)?x.resource_id:null;
+  let rid=x.resource_id&&/^[0-9a-f-]{36}$/.test(x.resource_id)?x.resource_id:null;
+  if(rid){const {data:rr}=await adminSb.from('resources').select('id').eq('id',rid).eq('business_id',b.id).maybeSingle();if(!rr)rid=null;}
   const {error:e2}=await adminSb.from('calisanlar').insert({business_id:b.id,user_id:nu.user.id,ad,username:u,resource_id:rid});
   if(e2){await adminSb.auth.admin.deleteUser(nu.user.id);return hata('Kaydedilemedi: '+e2.message);}
   return NextResponse.json({ok:true});}
@@ -25,6 +26,7 @@ export async function POST(req){try{const b=await requireOwner(req);const x=awai
  if(x.islem==='sil'){const {error}=await adminSb.auth.admin.deleteUser(c.user_id);if(error)return hata(error.message);return NextResponse.json({ok:true});}
  if(x.islem==='sifre'){const sifre=String(x.sifre||'');if(sifre.length<8)return hata('Şifre en az 8 karakter olmalı.');
   const {error}=await adminSb.auth.admin.updateUserById(c.user_id,{password:sifre});if(error)return hata(error.message);return NextResponse.json({ok:true});}
- if(x.islem==='usta'){const rid=x.resource_id&&/^[0-9a-f-]{36}$/.test(x.resource_id)?x.resource_id:null;
+ if(x.islem==='usta'){let rid=x.resource_id&&/^[0-9a-f-]{36}$/.test(x.resource_id)?x.resource_id:null;
+  if(rid){const {data:rr}=await adminSb.from('resources').select('id').eq('id',rid).eq('business_id',b.id).maybeSingle();if(!rr)return hata('Bu kişi ekibinizde yok.');}
   await adminSb.from('calisanlar').update({resource_id:rid}).eq('id',c.id);return NextResponse.json({ok:true});}
  return hata('Geçersiz işlem');}catch(e){return hata(e.message,e.message==='Giriş gerekli'?401:400);}}

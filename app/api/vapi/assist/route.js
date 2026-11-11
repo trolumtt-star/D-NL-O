@@ -36,7 +36,8 @@ export async function POST(req){
      const g=(gec||[]).find(x=>x.customer_name);
      if(g){
       const ex=g.extracted||{},son=String(g.orders||ex.service||ex.complaint||ex.interest||ex.issue||ex.reason||'').slice(0,60);
-      const ilk=`Hoş geldiniz ${g.customer_name}, sizi yeniden duymak çok güzel! Ben ${biz.name||'işletmenin'} yapay zeka asistanıyım, görüşmemiz hizmet kalitesi için kaydedilmektedir.${son?` En son ${son} için görüşmüştük.`:''} Bugün nasıl yardımcı olabilirim?`;
+      const ilk=`Hoş geldiniz ${g.customer_name}, sizi yeniden duymak çok güzel! Ben ${biz.name||'işletmenin'} yapay zeka asistanıyım, görüşmemiz hizmet kalitesi için kaydedilmektedir. Bugün nasıl yardımcı olabilirim?`;
+      // Arayan numara taklit edilebildiği için geçmiş sipariş/şikayet sesli söylenmez; sadece asistanın bağlamına verilir.
       return NextResponse.json({assistantId:biz.vapi_assistant_id,assistantOverrides:{firstMessage:ilk,variableValues:{musteriAdi:g.customer_name,sonIslem:son||'',aramaSayisi:String((gec||[]).length)}}});
      }}
    }catch{}
