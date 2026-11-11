@@ -18,7 +18,14 @@ export async function POST(req){try{await requireAdmin(req);const x=await req.js
  const lat=+x.lat,lon=+x.lon;if(!(lat>35&&lat<43&&lon>25&&lon<45))return hata('Konum Türkiye dışında görünüyor ya da alınamadı.');
  const konum={lat,lon},atla=new Set((x.atla||[]).map(String).slice(0,200));
  // 1) yakındakileri haritadan çek (önce 1,5 km; azsa 3 km)
- let bulunan=await yakindakiler(lat,lon,1500);if(bulunan.length<8)bulunan=bulunan.concat(await yakindakiler(lat,lon,3000).catch(()=>[]));
+ // Harita sunucusu cevap vermezse daha önce taranmış (veritabanındaki) yakın işletmelerle devam et
+ const t0=Date.now();let bulunan=[],uyari=null;
+ try{bulunan=await yakindakiler(lat,lon,1500);if(bulunan.length<8&&Date.now()-t0<14000)bulunan=bulunan.concat(await yakindakiler(lat,lon,3000).catch(()=>[]));}
+ catch(e){uyari=e.message;}
+ if(!bulunan.length){const d=0.03;const {data:eski}=await adminSb.from('leads').select('osm_id,name,category,lat,lon,phone,website,opening_hours,address,tags').not('osm_id','is',null)
+   .gte('lat',lat-d).lte('lat',lat+d).gte('lon',lon-d*1.3).lte('lon',lon+d*1.3).limit(400);
+  bulunan=(eski||[]).filter(x=>SEKTOR[x.category]);
+  if(!bulunan.length)return hata((uyari||'Yakında işletme bulunamadı.')+' Birkaç saniye sonra tekrar dene.');}
  const ids=[...new Set(bulunan.map(b=>b.osm_id))];
  // 2) veritabanında olmayanları ekle (ziyaret geçmişi korunur)
  const mevcut=new Map();for(let i=0;i<ids.length;i+=150){const {data}=await adminSb.from('leads').select('id,osm_id,ziyaret_at,ziyaret_sonuc,rating_count,rating').in('osm_id',ids.slice(i,i+150));for(const r of data||[])mevcut.set(r.osm_id,r);}
@@ -32,5 +39,5 @@ export async function POST(req){try{await requireAdmin(req);const x=await req.js
  aday.sort((a,b)=>b.puan-a.puan);
  const hazirla=a=>{const s=SEKTOR[a.category];return {id:a.id,ad:a.name,sektor:s.ad,puan:a.puan,mesafe:a.mesafe,yuruyus:a.yuruyus,neden:a.neden,acik:a.opening_hours,telefon:a.phone,adres:a.address,lat:a.lat,lon:a.lon,
   aci:s.aci,soz:s.soz,dikey:s.dikey,yol:`https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lon}&travelmode=walking`};};
- return NextResponse.json({toplam:aday.length,oneri:aday[0]?hazirla(aday[0]):null,alternatif:aday.slice(1,4).map(hazirla)});}
+ return NextResponse.json({uyari:uyari?'Harita sunucusu yavaştı, daha önce taranan işletmelerden önerildi.':null,toplam:aday.length,oneri:aday[0]?hazirla(aday[0]):null,alternatif:aday.slice(1,4).map(hazirla)});}
  catch(e){return hata(e.message,e.message==='Yetkisiz'?401:400);}}

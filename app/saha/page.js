@@ -14,7 +14,7 @@ export default function Saha(){
  const durum=()=>api('GET').then(setGun).catch(()=>{});
  useEffect(()=>{if(!isA)return;setHedef(ls.get('saha_hedef',10));const s=ls.get('saha_atla',{g:'',l:[]});if(s.g===new Date().toDateString())setAtla(s.l);durum();},[isA]);
  const oner=async(ek=[])=>{setBusy(true);setMsg('Konumun alınıyor…');setSonucAc(false);setNot('');try{const k=await konumAl();setMsg('Yakındaki işletmeler taranıyor…');
-  const j=await api('POST',{islem:'oner',...k,atla:[...atla,...ek]});setO(j.oneri);setAlt(j.alternatif||[]);setToplam(j.toplam||0);setMsg(j.oneri?'':'Yakında önerilecek uygun işletme kalmadı. Biraz yürüyüp tekrar dene ya da başka bir mahalleye geç.');}
+  const j=await api('POST',{islem:'oner',...k,atla:[...atla,...ek]});setO(j.oneri);setAlt(j.alternatif||[]);setToplam(j.toplam||0);setMsg(j.oneri?(j.uyari||''):'Yakında önerilecek uygun işletme kalmadı. Biraz yürüyüp tekrar dene ya da başka bir mahalleye geç.');}
   catch(e){setMsg(e.message);}setBusy(false);};
  const gec=()=>{if(!o)return;const l=[...atla,o.id];setAtla(l);ls.set('saha_atla',{g:new Date().toDateString(),l});if(alt.length){setO(alt[0]);setAlt(alt.slice(1));setSonucAc(false);}else oner([o.id]);};
  const kaydet=async(s)=>{if(!o)return;setBusy(true);try{await api('POST',{islem:'sonuc',id:o.id,sonuc:s,not});setMsg(s==='musteri'?'Tebrikler! 🎉 Admin panelden işletmeyi oluşturmayı unutma.':'Kaydedildi. Sıradaki işletme geliyor…');await durum();
