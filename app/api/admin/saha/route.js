@@ -20,7 +20,12 @@ export async function POST(req){try{await requireAdmin(req);const x=await req.js
  // 1) yakındakileri haritadan çek (önce 1,5 km; azsa 3 km)
  // Harita sunucusu cevap vermezse daha önce taranmış (veritabanındaki) yakın işletmelerle devam et
  const t0=Date.now();let bulunan=[],uyari=null;
- try{bulunan=await yakindakiler(lat,lon,1500);if(bulunan.length<8&&Date.now()-t0<14000)bulunan=bulunan.concat(await yakindakiler(lat,lon,3000).catch(()=>[]));}
+ // Telefon haritayı kendisi taradıysa (en hızlı yol) onun listesini doğrulayıp kullan
+ if(Array.isArray(x.liste)&&x.liste.length){const t=v=>typeof v==='string'?v.slice(0,200):null;
+  bulunan=x.liste.slice(0,500).filter(b=>/^(node|way|relation)\/\d{1,15}$/.test(b?.osm_id)&&SEKTOR[b.category]&&typeof b.name==='string'&&Number.isFinite(+b.lat)&&Number.isFinite(+b.lon)&&Math.abs(+b.lat-lat)<0.06&&Math.abs(+b.lon-lon)<0.08)
+   .map(b=>({osm_id:b.osm_id,name:b.name.slice(0,120),category:b.category,lat:+b.lat,lon:+b.lon,phone:t(b.phone),website:t(b.website),opening_hours:t(b.opening_hours),address:t(b.address),source:'osm',
+    tags:{brand:t(b.tags?.brand),delivery:t(b.tags?.delivery),takeaway:t(b.tags?.takeaway),cuisine:t(b.tags?.cuisine)}}));}
+ if(!bulunan.length)try{bulunan=await yakindakiler(lat,lon,1500);if(bulunan.length<8&&Date.now()-t0<14000)bulunan=bulunan.concat(await yakindakiler(lat,lon,3000).catch(()=>[]));}
  catch(e){uyari=e.message;}
  if(!bulunan.length){const d=0.03;const {data:eski}=await adminSb.from('leads').select('osm_id,name,category,lat,lon,phone,website,opening_hours,address,tags').not('osm_id','is',null)
    .gte('lat',lat-d).lte('lat',lat+d).gte('lon',lon-d*1.3).lte('lon',lon+d*1.3).limit(400);

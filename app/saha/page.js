@@ -1,7 +1,7 @@
 'use client';
 // SAHA MODU (telefon için): "İşletme öner"e bas, sana en yakın ve Dinlio'yu alma ihtimali en yüksek işletmeyi göstersin,
 // yol tarifi versin, ne söyleyeceğini hatırlatsın. Ziyaretten sonra sonucu işaretle, sıradakine geç.
-import {useEffect,useState} from 'react';import {useRouter} from 'next/navigation';import {sb} from '@/lib/supabase';import {useUser} from '@/lib/useAuth';
+import {useEffect,useState} from 'react';import {useRouter} from 'next/navigation';import {sb} from '@/lib/supabase';import {useUser} from '@/lib/useAuth';import {yakindakiler} from '@/lib/saha';
 const api=async(method,body)=>{const {data}=await sb.auth.getSession();const r=await fetch('/api/admin/saha',{method,headers:{'content-type':'application/json',authorization:'Bearer '+(data.session?.access_token||'')},body:body?JSON.stringify(body):undefined});const j=await r.json();if(!r.ok)throw new Error(j.error||'Hata');return j;};
 const ls={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch{return d;}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}}};
 const SON=[['demo','Demo yaptım, ilgilendi','✅'],['ilgilendi','İlgilendi, tekrar gel','🙂'],['sonra','Yetkili yoktu, sonra gel','⏳'],['ilgilenmedi','İlgilenmedi','✖'],['kapali','Kapalı / bulunamadı','🚪'],['musteri','Müşteri oldu!','🎉']];
@@ -14,7 +14,9 @@ export default function Saha(){
  const durum=()=>api('GET').then(setGun).catch(()=>{});
  useEffect(()=>{if(!isA)return;setHedef(ls.get('saha_hedef',10));const s=ls.get('saha_atla',{g:'',l:[]});if(s.g===new Date().toDateString())setAtla(s.l);durum();},[isA]);
  const oner=async(ek=[])=>{setBusy(true);setMsg('Konumun alınıyor…');setSonucAc(false);setNot('');try{const k=await konumAl();setMsg('Yakındaki işletmeler taranıyor…');
-  const j=await api('POST',{islem:'oner',...k,atla:[...atla,...ek]});setO(j.oneri);setAlt(j.alternatif||[]);setToplam(j.toplam||0);setMsg(j.oneri?(j.uyari||''):'Yakında önerilecek uygun işletme kalmadı. Biraz yürüyüp tekrar dene ya da başka bir mahalleye geç.');}
+  // Haritayı telefonun kendisi tarar (Türkiye'den, en hızlı); olmazsa sunucu dener
+  let liste=[];try{liste=await yakindakiler(k.lat,k.lon,1500);if(liste.length<8)liste=liste.concat(await yakindakiler(k.lat,k.lon,3000).catch(()=>[]));}catch{}
+  const j=await api('POST',{islem:'oner',...k,atla:[...atla,...ek],liste:liste.slice(0,500)});setO(j.oneri);setAlt(j.alternatif||[]);setToplam(j.toplam||0);setMsg(j.oneri?(j.uyari||''):'Yakında önerilecek uygun işletme kalmadı. Biraz yürüyüp tekrar dene ya da başka bir mahalleye geç.');}
   catch(e){setMsg(e.message);}setBusy(false);};
  const gec=()=>{if(!o)return;const l=[...atla,o.id];setAtla(l);ls.set('saha_atla',{g:new Date().toDateString(),l});if(alt.length){setO(alt[0]);setAlt(alt.slice(1));setSonucAc(false);}else oner([o.id]);};
  const kaydet=async(s)=>{if(!o)return;setBusy(true);try{await api('POST',{islem:'sonuc',id:o.id,sonuc:s,not});setMsg(s==='musteri'?'Tebrikler! 🎉 Admin panelden işletmeyi oluşturmayı unutma.':'Kaydedildi. Sıradaki işletme geliyor…');await durum();
@@ -45,6 +47,7 @@ export default function Saha(){
    <div className="row" style={{gap:8,marginTop:12,flexWrap:'wrap'}}>
     <a className="lb" href={o.yol} target="_blank" rel="noopener noreferrer" style={{flex:1,textAlign:'center',padding:'12px 10px',fontWeight:700}}>🧭 Yol tarifi</a>
     {o.telefon&&<a className="lb" href={'tel:'+o.telefon} style={{padding:'12px 14px'}}>📞</a>}
+    <a className="lb" href={'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(o.ad+(o.adres?' '+o.adres:''))} target="_blank" rel="noopener noreferrer" style={{padding:'12px 14px'}} title="Google Haritalar'da yorumlarına bak">⭐</a>
     <button className="g" disabled={busy} onClick={gec} style={{padding:'12px 14px'}}>Geç ›</button></div>
    {!sonucAc?<button style={{width:'100%',marginTop:10,padding:'14px 10px',fontWeight:700}} onClick={()=>setSonucAc(true)}>Vardım, sonucu gir</button>
    :<div style={{marginTop:12}}>
