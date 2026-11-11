@@ -16,7 +16,7 @@ ${(c.fields||[]).map(f=>'- '+f.l).join('\n')}
 - Arayanın telefon numarasını SORMA, sistem zaten biliyor. Sadece farklı bir numaradan geri aranmak isterse sor.
 
 ${(c.services||[]).length?'Hizmetler: '+c.services.map(s=>s.n+' ('+s.d+' dk)').join(', ')+'. Fiyat için get_price aracını kullan, uydurma.\n\n':''}Araçlar:
-${rest?'- check_tables(date, time): boş masaları verir.\n- book_table(date, time, name, partySize, tableNumber): masa ayırır.\n- get_price(item): ürün fiyatı.':ord?'- get_price(item): ürün fiyatı ve stok durumu. Sipariş tamamlanınca özeti okuyup onay iste.':'- check_availability(date, service): müsait saatleri verir.\n- book_appointment(date, time, name, service, doctor): '+bk+' oluşturur.\n- get_price(item): hizmet fiyatı ve süresi.'}
+${rest?'- check_tables(date, time): boş masaları verir.\n- book_table(date, time, name, partySize, tableNumber): masa ayırır.\n- get_price(item): ürün fiyatı.':ord?'- get_price(item): ürün fiyatı ve stok durumu. Sipariş tamamlanınca özeti okuyup onay iste.':(v.kind==='appointment'?'- check_availability(date, service): müsait saatleri verir.\n- book_appointment(date, time, name, service, doctor): '+bk+' oluşturur.\n':'')+'- save_request(customerName, ...): öğrendiğin bilgileri panele anında kaydeder; ad ve isteği öğrenir öğrenmez çağır, yeni bilgi geldikçe tüm bilgilerle tekrar çağır.\n- get_price(item): hizmet fiyatı ve süresi.'}
 
 Kurallar:
 ${c.notes?'- '+c.notes+'\n':''}- Bilmediğin bir şeyi uydurma, işletmenin geri arayacağını söyle.

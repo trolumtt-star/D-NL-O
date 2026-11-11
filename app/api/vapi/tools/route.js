@@ -23,7 +23,7 @@ export async function POST(req){
   const name=tc.name||tc.function?.name;let a=tc.arguments||tc.function?.arguments||{};if(typeof a==='string'){try{a=JSON.parse(a);}catch{a={};}}
   const date=(d=>d<today()?today():d)(nd(a.date)),time=nt(a.time)||nowT();let out;
   if(!biz)out={ok:false,reason:'business_not_found'};
-  else if(biz.status==='suspended'&&['save_order','book_table','book_appointment'].includes(name))out={ok:false,reason:'quota_exhausted',message:'Bu işletmenin asistan süresi doldu, kayıt alınamıyor. Müşteriye işletmeyi doğrudan aramasını kibarca söyle ve görüşmeyi bitir.'};
+  else if(biz.status==='suspended'&&['save_order','save_request','book_table','book_appointment'].includes(name))out={ok:false,reason:'quota_exhausted',message:'Bu işletmenin asistan süresi doldu, kayıt alınamıyor. Müşteriye işletmeyi doğrudan aramasını kibarca söyle ve görüşmeyi bitir.'};
   else if(name==='check_tables'){const {data,error}=await adminSb.rpc('free_tables',{p_business:bid,p_date:date,p_time:time});out=error?{ok:false,reason:error.message}:{ok:true,date,time,free_tables:data,message:data.length?`Müsait masalar: ${data.join(', ')}`:'Bu saatte boş masa yok.'};}
   else if(name==='book_table'){const {data,error}=await adminSb.rpc('book_table',{p_business:bid,p_date:date,p_time:time,p_name:a.name||null,p_phone:a.phone||call.customer?.number||null,p_size:parseInt(a.partySize)||null,p_table:parseInt(a.tableNumber)||null,p_call:null,p_source:'vapi'});out=error?{ok:false,reason:error.message}:data;if(data?.ok&&!data.duplicate)await bildir(bid,`🍽 Yeni rezervasyon\n${date} ${time}${a.name?' · '+a.name:''}${a.partySize?' · '+a.partySize+' kişi':''}${data.table_number?' · Masa '+data.table_number:''}`);}
   else if(name==='check_availability'||name==='book_appointment'){
@@ -49,6 +49,20 @@ export async function POST(req){
      if(+a.lat&&+a.lng)ek.konum={lat:+a.lat,lng:+a.lng};if(a.kuryeNotu)ek.kuryeNotu=String(a.kuryeNotu).slice(0,300);await adminSb.from('calls').update({extracted:ek}).eq('id',cid);}
     if(!error&&cid)await siparisBildir(bid,cid,`🛵 Yeni sipariş\n${or}${a.address?'\n📍 '+a.address:''}${a.customerName?'\n👤 '+a.customerName:''}${sp||call.customer?.number?'\n📞 '+(sp||call.customer?.number):''}${+a.lat&&+a.lng?`\n🗺 https://maps.google.com/?q=${a.lat},${a.lng}`:''}`);
     out=error?{ok:false,reason:error.message}:{ok:true,kayit:cid,message:'Sipariş panele düştü. Müşteriye siparişin alındığını ve teslim süresini söyle.'};}}
+  else if(name==='save_request'){
+   // Randevulu/talepli sektörlerin canlı kaydı: bilgiler panele anında düşer, tekrar çağrılınca birleşir.
+   const ex={};for(const [k,v] of Object.entries(a||{})){
+    if(['customerName','phone','statedPhone'].includes(k))continue;
+    if(typeof v==='number'||typeof v==='boolean'){ex[k]=String(v);continue;}
+    if(typeof v==='string'&&v.trim()&&v.trim().toLowerCase()!=='bilinmiyor')ex[String(k).slice(0,40)]=v.trim().slice(0,300);}
+   const ad=a.customerName?String(a.customerName).slice(0,80):null,tel=a.phone?String(a.phone).replace(/[^\d+]/g,'').slice(0,20):null;
+   if(!ad&&!tel&&!Object.keys(ex).length)out={ok:false,reason:'Kaydedilecek bilgi yok. Önce müşterinin adını ve isteğini öğren.'};
+   else{const {data:cid,error}=await adminSb.rpc('save_request_live',{p_business:bid,p_call:call.id||null,p_phone:call.customer?.number||null,p_name:ad,p_stated:tel,p_extracted:Object.keys(ex).length?ex:null});
+    if(!error&&cid&&(ad||Object.keys(ex).length)){
+     const {data:vr}=await adminSb.from('verticals').select('config').eq('id',biz.vertical||'generic').maybeSingle();
+     const et=Object.fromEntries(((vr?.config?.fields)||[]).map(f=>[f.k,f.l]));
+     await siparisBildir(bid,cid,`📋 Yeni talep${ad?' · '+ad:''}\n${Object.entries(ex).slice(0,6).map(([k,v])=>'• '+(et[k]||k)+': '+v).join('\n')}${tel||call.customer?.number?'\n📞 '+(tel||call.customer.number):''}`);}
+    out=error?{ok:false,reason:error.message}:{ok:true,message:'Kaydedildi. Eksik bilgi varsa doğal şekilde sormaya devam et.'};}}
   else if(name==='find_location'){const yer=Array.isArray(a.yerler)?a.yerler:String(a.yerler||a.landmarks||'').split(/,|\bve\b/).map(x=>x.trim()).filter(Boolean);
    try{out=await tariftenBul({mahalle:a.mahalle,ilce:a.ilce,yerler:yer,tarif:a.tarif},biz.settings?.konum);}catch(e){out={ok:false,reason:'Harita şu an cevap vermedi. Müşteriden tarifi kurye notu olarak al, sipariş yine kaydedilsin.'};}}
   else out={ok:false,reason:'unknown_tool'};
