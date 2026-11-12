@@ -26,8 +26,11 @@ export default function Seslendirme({sb}){
  const ses=k=>ayar[k]?.ses||ONERI[k]?.[0]||'Kore',stil=k=>ayar[k]?.stil??(ONERI[k]?.[1]||'Doğal, samimi Türkçe ile');
  const uret=async()=>{const satir=ayir(metin);if(!satir.length)return;setBusy(true);setUrl('');
   const t=(await sb.auth.getSession()).data.session?.access_token;const parcalar=[];let hz=24000;
-  try{for(let i=0;i<satir.length;i++){const {k,m}=satir[i];setMsg(`Seslendiriliyor: ${i+1} / ${satir.length} (${k})`);
-    const r=await fetch('/api/admin/seslendir',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+t},body:JSON.stringify({metin:m,ses:ses(k),stil:stil(k)})});const j=await r.json();if(!r.ok)throw new Error(j.error);
+  // Kota tasarrufu: art arda gelen ve en fazla 2 kişinin konuştuğu satırlar tek istekte okunur
+  const gruplar=[];for(const l of satir){const g=gruplar[gruplar.length-1];const ad=g?new Set([...g.map(x=>x.k),l.k]):null;if(g&&ad.size<=2&&g.length<4)g.push(l);else gruplar.push([l]);}
+  const kisiler=Object.fromEntries([...new Set(satir.map(x=>x.k))].map(k=>[k,{ses:ses(k),stil:stil(k)}]));
+  try{for(let i=0;i<gruplar.length;i++){const g=gruplar[i];setMsg(`Seslendiriliyor: ${i+1} / ${gruplar.length} (${[...new Set(g.map(x=>x.k))].join(' + ')})`);
+    const r=await fetch('/api/admin/seslendir',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+t},body:JSON.stringify({diyalog:g,kisiler})});const j=await r.json();if(!r.ok)throw new Error(j.error);
     const w=b64(j.wav),dv=new DataView(w.buffer);hz=dv.getUint32(24,true);parcalar.push(w.slice(44));}
    const sus=new Uint8Array(Math.round(hz*bosluk)*2),toplam=parcalar.reduce((s,p)=>s+p.length,0)+sus.length*parcalar.length;
    const out=new Uint8Array(44+toplam),dv=new DataView(out.buffer),yaz=(o,s)=>{for(let i=0;i<s.length;i++)out[o+i]=s.charCodeAt(i);};
@@ -36,7 +39,7 @@ export default function Seslendirme({sb}){
    setUrl(URL.createObjectURL(new Blob([out],{type:'audio/wav'})));setMsg(`Hazır: ${satir.length} satır. Dinle; beğenirsen indir ve sohbete yükle.`);}
   catch(e){setMsg('Hata: '+e.message);}setBusy(false);};
  return <div className="card sec2"><h2>Reklam seslendirmesi</h2>
-  <p className="mut">Her satırı <b>Konuşmacı: metin</b> şeklinde yaz. Her konuşmacıya ayrı ses ve tarz verilir, satırlar sırayla okunup tek dosya olur. İndirip sohbete yükle; videoya ben eklerim.</p>
+  <p className="mut">Her satırı <b>Konuşmacı: metin</b> şeklinde yaz. Her konuşmacıya ayrı ses ve tarz verilir. Kota harcamamak için iki kişilik konuşmalar tek seferde okunur (bu senaryo 5 istek). İndirip sohbete yükle; videoya ben eklerim.</p>
   <textarea rows="12" value={metin} onChange={e=>setMetin(e.target.value)} style={{marginTop:8,fontSize:'.88rem'}}/>
   <div style={{marginTop:8,display:'grid',gap:6}}>{kisiler.map(k=><div key={k} className="row" style={{gap:8,justifyContent:'flex-start',flexWrap:'wrap'}}>
    <b style={{minWidth:80}}>{k}</b><select value={ses(k)} onChange={e=>setAyar({...ayar,[k]:{...ayar[k],ses:e.target.value}})} style={{width:'auto',margin:0}}>{SESLER.map(s=><option key={s}>{s}</option>)}</select>
