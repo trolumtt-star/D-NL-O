@@ -37,6 +37,8 @@ Kullanıcıyla konuşulup "şimdi değil, sonra" denen özellikler. Paket kademe
 - Fiyat = işletmenin kendi fiyatı (telefonla aynı), uygulama komisyonu yok. Reklamda rakip adı geçmesin (karşılaştırmalı reklam riski).
 - Ödeme: önce sadece kapıda (nakit / kuryenin POS'u); online kart şirket sonrası, restoranın kendi iyzico/PayTR hesabına.
 - Siparişler Dinlio Go kuryelerine düşer. Açılış zamanı: Yalova'da 15-20 restoran Dinlio'dayken.
+- Teslimat ücreti (işletme seçer): ücretsiz / sabit ücret / "X ₺ üstü ücretsiz" / mesafeye göre. Sepette açık döküm: Ürünler + Teslimat + "Uygulama komisyonu: 0 ₺" = Toplam. Rakip uygulamanın tahmini fiyatı gösterilmez.
+- Kurye ücreti (Dinlio Go) müşterinin ödediği teslimat ücretinden ayrı: taban (~60 ₺) + km başı ek + gece/yağmur primi, işletme ayarlar. Türkiye ortalaması paket başı ~70 ₺ (Ocak 2026).
 - Gelir sonra: öne çıkarma ücreti / küçük komisyon / Dinlio paketine dahil.
 
 ## Kararlar
