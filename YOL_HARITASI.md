@@ -65,7 +65,7 @@ Dış hesap / onay gerekir (KOD HAZIR, anahtar eklenince açılır — admin > S
 - [~] Giden arama: randevu teyidi/hatırlatma, kampanya + aranmak istemeyenler listesi (İYS) — Netgsm
 - [~] SMS hatırlatma — Netgsm
 - [~] Google / Outlook takvim — Google OAuth onayı
-- [~] Ses klonlama — ElevenLabs maliyeti
+- [~] Ses klonlama — ElevenLabs maliyeti (Standart ve üstü)
 - [ ] Bayi / ajans programı (white label) — Sesera, Lidscope
 Önerilmeyen: sosyal medya içerik ve Meta reklam (Lidscope, Callivo), sürükle-bırak iş akışı editörü (Sesla), web sesli arama butonu.
 Fiyat uyarısı: Sesera 499 ₺ / 150 dk (KDV dahil, ~3,3 ₺/dk) bizim Vapi maliyetimizin (~0,09 $/dk) altında; fiyatla değil sektöre özel özellikle (sipariş + adres + kurye) rekabet.

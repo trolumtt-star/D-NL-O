@@ -1,4 +1,4 @@
-// Pro: özel ses / ses kopyası (ElevenLabs). İşletme en az 1 dakikalık temiz bir ses kaydı yükler,
+// Standart ve üstü: özel ses / ses kopyası (ElevenLabs). İşletme en az 1 dakikalık temiz bir ses kaydı yükler,
 // sesin sahibi olduğunu ya da izni olduğunu onaylar; ses ElevenLabs'te oluşturulur ve asistan bu sesle konuşur.
 // Gerekli env: ELEVENLABS_API_KEY. Aynı anahtar Vapi > Provider Keys > ElevenLabs alanına da girilmeli.
 import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {requireOwner} from '@/lib/owner';import {paketOf,enAzPaket} from '@/lib/paket';
@@ -7,7 +7,7 @@ const hata=(m,s=400)=>NextResponse.json({error:m},{status:s});
 export async function GET(req){try{const b=await requireOwner(req);const o=b.settings?.ozel_ses||null;
  return NextResponse.json({hazir:!!process.env.ELEVENLABS_API_KEY,izin:paketOf(b).ozelSes,enAz:enAzPaket('ozelSes'),ses:o?{ad:o.ad,tarih:o.tarih,aktif:o.aktif!==false}:null});}catch(e){return hata(e.message,401);}}
 export async function POST(req){try{const b=await requireOwner(req);const key=process.env.ELEVENLABS_API_KEY,s={...(b.settings||{})};
- if(!paketOf(b).ozelSes)return hata(`Özel ses ${enAzPaket('ozelSes')} pakette açılır.`);
+ if(!paketOf(b).ozelSes)return hata(`Özel ses ${enAzPaket('ozelSes')} paketten itibaren açılır.`);
  if((req.headers.get('content-type')||'').includes('application/json')){const x=await req.json();
   if(x.islem==='kapat'||x.islem==='ac'){if(!s.ozel_ses)return hata('Kayıtlı ses yok.');s.ozel_ses={...s.ozel_ses,aktif:x.islem==='ac'};}
   else if(x.islem==='sil'){if(s.ozel_ses?.voiceId&&key)await fetch('https://api.elevenlabs.io/v1/voices/'+encodeURIComponent(s.ozel_ses.voiceId),{method:'DELETE',headers:{'xi-api-key':key}}).catch(()=>{});delete s.ozel_ses;}
