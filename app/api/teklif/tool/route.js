@@ -1,5 +1,5 @@
 // Teklif asistanının araçları: demo_saatleri, teklif_sonuc. Sadece bizim kuyruğumuzdaki aramalar için çalışır.
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {ayar,demoSaatleri} from '@/lib/teklif';import {smsGonder} from '@/lib/entegrasyon';import {DESTEK} from '@/lib/destek';
+import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {ayar,demoSaatleri,demoSil} from '@/lib/teklif';import {smsGonder} from '@/lib/entegrasyon';import {DESTEK} from '@/lib/destek';
 export const dynamic='force-dynamic';export const maxDuration=20;
 const SONUC=['randevu','ilgilendi','sonra','istemiyor','yanlis'];
 export async function POST(req){
@@ -7,7 +7,7 @@ export async function POST(req){
  if(sec&&hs!==sec)return NextResponse.json({error:'yetkisiz'},{status:401});
  let body;try{body=await req.json();}catch{return NextResponse.json({results:[]});}
  const m=body.message||{},call=m.call||{},calls=m.toolCallList||m.toolCalls||[],results=[];
- const {data:x}=call.id?await adminSb.from('teklif_arama').select('id,ad,tel').eq('vapi_call_id',call.id).maybeSingle():{data:null};
+ const {data:x}=call.id?await adminSb.from('teklif_arama').select('id,ad,tel,demo_asistan_id').eq('vapi_call_id',call.id).maybeSingle():{data:null};
  for(const tc of calls){const name=tc.function?.name||tc.name;let a=tc.function?.arguments||tc.arguments||{};if(typeof a==='string'){try{a=JSON.parse(a);}catch{a={};}}let out;
   if(!x)out={ok:false,reason:'Bu arama teklif listesinde değil.'};
   else if(name==='demo_saatleri'){const s=await demoSaatleri(await ayar());out=s.length?{ok:true,saatler:s,message:'En fazla 3 seçenek söyle (gün adı ve saatle).'}:{ok:true,saatler:[],message:'Bu hafta boş demo saati yok. Müşteriye birkaç gün içinde tekrar arayıp gün ayarlayacağımızı söyle ve sonuc="ilgilendi" ile kaydet.'};}
@@ -19,7 +19,7 @@ export async function POST(req){
     u.randevu_at=t.toISOString();}
    if(sonuc==='sonra')u.sonraki_at=new Date(Date.now()+24*36e5).toISOString();
    await adminSb.from('teklif_arama').update(u).eq('id',x.id);
-   if(sonuc==='istemiyor'||sonuc==='yanlis')await adminSb.from('aranmayacak').upsert({tel:x.tel,neden:sonuc});
+   if(sonuc==='istemiyor'||sonuc==='yanlis'){await adminSb.from('aranmayacak').upsert({tel:x.tel,neden:sonuc});if(x.demo_asistan_id)try{await demoSil(x.demo_asistan_id);}catch{}}
    if(sonuc==='randevu'){const z=new Date(u.randevu_at).toLocaleString('tr-TR',{timeZone:'Europe/Istanbul',weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
     await adminSb.from('webhook_events').insert({type:'teklif_randevu',payload:{ad:x.ad,zaman:z}});try{await smsGonder(DESTEK,`Dinlio teklif: ${x.ad} demo randevusu verdi: ${z}${u.yetkili?' ('+u.yetkili+')':''}. Tel: 0${x.tel}`);}catch{}}
    out={ok:true,message:'Kaydedildi. Kısaca teşekkür et ve vedalaşıp görüşmeyi bitir.'};}
