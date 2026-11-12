@@ -4,7 +4,7 @@ export const dynamic='force-dynamic';
 const ok=d=>NextResponse.json(d),hata=(e,s=400)=>NextResponse.json({error:e},{status:s});
 export async function GET(req){try{const b=await requireOwner(req);return ok({yonlendirme:b.settings?.kota_yonlendirme||'',asim:{acik:!!b.settings?.asim?.acik,limit_dk:b.settings?.asim?.limit_dk||100,tavan:Math.max(30,Math.min(3000,b.quota_minutes_total||100))}});}catch(e){return hata(e.message,401);}}
 export async function POST(req){try{const b=await requireOwner(req);const x=await req.json(),s={...(b.settings||{})};
- if(x.islem==='yonlendirme'){const d=String(x.numara||'').replace(/\D/g,'');if(d&&(d.length<10||d.length>13))return hata('Geçerli bir telefon numarası girin.');
+ if(x.islem==='yonlendirme'){const d=String(x.numara||'').replace(/\D/g,'');if(d&&!/^(90|0)?[2-5]\d{9}$/.test(d))return hata('Geçerli bir Türkiye telefon numarası girin (05xx… veya 0 alan kodu…).');
   if(d&&b.phone_number&&String(b.phone_number).replace(/\D/g,'').slice(-10)===d.slice(-10))return hata('Bu, aramaları asistana yönlendirdiğiniz numaranın aynısı. Döngü olmaması için başka bir numara girin (ör. ikinci cep telefonu).');
   s.kota_yonlendirme=d||null;}
  else if(x.islem==='asim'){const lim=Math.round(+x.limit_dk||0),tavan=Math.max(30,Math.min(3000,b.quota_minutes_total||100));if(x.acik&&!(lim>=10&&lim<=tavan))return hata(`Aşım limiti en fazla paketinizdeki dakika kadar (${tavan} dk) olabilir.`);

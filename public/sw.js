@@ -16,6 +16,7 @@ self.addEventListener('notificationclick',e=>{
    .catch(()=>self.registration.showNotification('Dinlio AI',{body:'İşlem yapılamadı, paneli açın.',icon:'/icon-192.png',data:{url}})));
   return;}
  e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(l=>{
-  for(const c of l){if(new URL(c.url).pathname.startsWith('/panel')&&'focus' in c)return c.focus();}
+  const hedef=url.startsWith('/go')?'/go':'/panel';
+  for(const c of l){if(new URL(c.url).pathname.startsWith(hedef)&&'focus' in c)return c.focus();}
   return self.clients.openWindow(url);}));
 });

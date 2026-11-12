@@ -8,7 +8,7 @@ export default function AsistanAyar({tok,siparis}){
  const api=(m,b)=>req('/api/isletme-ayar',m,b);
  const doldur=j=>{setD(j);setF({tatil:j.tatil.aktif,tmesaj:j.tatil.mesaj||'',kara:(j.kara_liste||[]).map(n=>'0'+n).join('\n'),kamp:j.kampanya.aktif,kmetin:j.kampanya.metin||'',bilgi:j.bilgi||'',
   ad:j.asistan.ad||'',kisilik:j.asistan.kisilik||'',maxdk:j.gorusme.max_dk||0,yavas:!!j.gorusme.yavas,kkapali:!!j.gorusme.kayit_kapali,km:j.teslimat_km||0,acil:j.acil_tanim||'',
-  aktarma:j.aktarma_no?'0'+String(j.aktarma_no).slice(-10):'',hat:j.hatirlatma||'yok',smsOnay:!!j.sms_onay,ep:!!j.eposta_ozet.aktif,epAdres:j.eposta_ozet.adres||'',cikis:j.cikis?.url||''});};
+  aktarma:j.aktarma_no?'0'+String(j.aktarma_no).slice(-10):'',hat:j.hatirlatma||'yok',smsOnay:!!j.sms_onay,ep:!!j.eposta_ozet.aktif,epAdres:j.eposta_ozet.adres||'',cikis:j.cikis?.url||'',yorum:!!j.yorum.aktif,yorumLink:j.yorum.link||'',waOto:!!j.wa_oto});};
  const gYukle=()=>req('/api/google/baglan','GET').then(setGt).catch(()=>{});const sYukle=()=>req('/api/ses-kopya','GET').then(setOs).catch(()=>{});
  useEffect(()=>{api('GET').then(doldur).catch(e=>setMsg({genel:e.message}));gYukle();sYukle();
   try{const q=new URLSearchParams(location.search).get('takvim');if(q)setMsg({takvim:q==='ok'?'Google Takvim bağlandı.':'Google Takvim bağlanamadı, tekrar deneyin.'});}catch{}},[]);
@@ -50,7 +50,12 @@ export default function AsistanAyar({tok,siparis}){
    {P.sms?<>{!d.baglanti.netgsm&&<p>{yakinda()} <span className="mut">SMS hattı bağlanınca otomatik çalışır.</span></p>}
     {ck('smsOnay','Sipariş ve randevu alınınca müşteriye onay SMS\'i gönder')}{btn('sms_onay',{aktif:f.smsOnay},'Kaydedildi.')}</>:kilit('sms')}{M('sms_onay')}
    <h3 style={{marginTop:12}}>Randevu hatırlatma</h3>{P.hatirlatma?<><p className="mut">Yarınki randevular için akşam hatırlatma gönderilir.</p>
-    <div className="frm"><label>Hatırlatma<select value={f.hat} onChange={e=>setF({...f,hat:e.target.value})}><option value="yok">Gönderme</option><option value="sms">SMS ile</option><option value="arama">Asistan arasın</option></select></label>{btn('hatirlatma',{tur:f.hat},'Kaydedildi.')}</div></>:kilit('hatirlatma')}{M('hatirlatma')}</div>
+    <div className="frm"><label>Hatırlatma<select value={f.hat} onChange={e=>setF({...f,hat:e.target.value})}><option value="yok">Gönderme</option><option value="sms">SMS ile</option><option value="arama">Asistan arasın</option></select></label>{btn('hatirlatma',{tur:f.hat},'Kaydedildi.')}</div></>:kilit('hatirlatma')}{M('hatirlatma')}
+   <h3 style={{marginTop:12}}>Google yorum isteme</h3>{P.sms?<><p className="mut">Siparişi teslim edilen ve memnun kalan, randevusu tamamlanan müşterilere akşam yorum linkiniz gider. Aynı kişiye 90 günde bir kez.</p>
+    {ck('yorum','Google yorumu iste')}<input value={f.yorumLink} onChange={e=>setF({...f,yorumLink:e.target.value})} placeholder="https://g.page/r/…/review"/>{btn('yorum',{aktif:f.yorum,link:f.yorumLink},'Kaydedildi.')}</>:kilit('sms')}{M('yorum')}</div>
+  <div className="card sec2"><h2>WhatsApp otomatik cevap</h2>{P.mesaj?<>{!d.baglanti.whatsapp&&<p>{yakinda()} <span className="mut">WhatsApp Business hattınız bağlanınca çalışır.</span></p>}
+   <p className="mut">Müşteri WhatsApp'tan yazınca asistan fiyat, saat ve bilgi sorularını cevaplar. Sipariş, randevu ve şikâyette size bildirim gönderir; kesin işlem yapmaz.</p>
+   {ck('waOto','WhatsApp mesajlarına otomatik cevap ver')}{btn('wa_oto',{aktif:f.waOto},'Kaydedildi.')}</>:<p style={{marginTop:6}}>🔒 <b>Standart</b> paketten itibaren açılır.</p>}{M('wa_oto')}</div>
   <div className="card sec2"><h2>Her aramadan sonra e-posta</h2>{P.eposta?<>{!d.baglanti.eposta&&<p>{yakinda()} <span className="mut">E-posta servisi bağlanınca çalışır.</span></p>}
    {ck('ep','Her arama/sipariş özetini e-postayla gönder')}<input value={f.epAdres} onChange={e=>setF({...f,epAdres:e.target.value})} placeholder="ornek@isletme.com"/>{btn('eposta',{aktif:f.ep,adres:f.epAdres},'Kaydedildi.')}</>:kilit('eposta')}{M('eposta')}</div>
   {gt&&<div className="card sec2"><h2>Google Takvim</h2>{!gt.izin?kilit('takvim'):!gt.hazir?<p>{yakinda()} <span className="mut">Google bağlantısı açılınca buradan tek tıkla bağlarsınız.</span></p>:gt.bagli?

@@ -2,7 +2,7 @@
 // Ayrıca yarınki randevulara hatırlatma (SMS/arama) gider.
 // Pazartesi akşamı Büyük/Pro işletmelere haftalık rapor da gider.
 // Günde bir kez çalışır (settings.son_ozet); tekrar çağrılsa da aynı gün ikinci özet gitmez.
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {bildir} from '@/lib/bildir';import {paketOf} from '@/lib/paket';import {hatirlatmalariGonder} from '@/lib/hatirlatma';
+import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {bildir} from '@/lib/bildir';import {paketOf} from '@/lib/paket';import {hatirlatmalariGonder,yorumIste} from '@/lib/hatirlatma';
 export const dynamic='force-dynamic';export const maxDuration=60;
 const TZ='Europe/Istanbul',gun=d=>new Date(d).toLocaleDateString('sv-SE',{timeZone:TZ});
 // Türkiye saatine göre bugünün başlangıcı (UTC+3, yaz saati yok)
@@ -54,4 +54,5 @@ export async function GET(req){
    await adminSb.from('businesses').update({settings:{...(g?.settings||{}),son_haftalik:bugun}}).eq('id',b.id);haftalik++;}}
  // Yarınki randevular için hatırlatma (SMS veya arama; Büyük+)
  let hat=null;try{hat=await hatirlatmalariGonder({butce:20000});}catch(e){hat={hata:String(e.message||e).slice(0,120)};}
- return NextResponse.json({ok:true,gonderilen,haftalik,hatirlatma:hat});}
+ let yorum=null;try{yorum=await yorumIste({butce:12000});}catch(e){yorum={hata:String(e.message||e).slice(0,120)};}
+ return NextResponse.json({ok:true,gonderilen,haftalik,hatirlatma:hat,yorum});}

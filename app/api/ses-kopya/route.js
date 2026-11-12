@@ -14,6 +14,8 @@ export async function POST(req){try{const b=await requireOwner(req);const key=pr
   else return hata('Geçersiz işlem');
   await adminSb.from('businesses').update({settings:s}).eq('id',b.id);return NextResponse.json({ok:true});}
  if(!key)return hata('Ses kopyalama henüz açılmadı.');
+ const gun=new Date().toISOString().slice(0,10),dn=s.ses_deneme?.gun===gun?s.ses_deneme.n:0;if(dn>=3)return hata('Bugün için ses oluşturma hakkınız doldu (günde 3). Yarın tekrar deneyin.');
+ s.ses_deneme={gun,n:dn+1};await adminSb.from('businesses').update({settings:s}).eq('id',b.id);
  const f=await req.formData(),dosya=f.get('dosya');
  if(f.get('onay')!=='evet')return hata('Sesin size ait olduğunu veya sahibinin izni olduğunu onaylamanız gerekiyor.');
  if(!dosya||typeof dosya==='string')return hata('Ses dosyası seçin.');

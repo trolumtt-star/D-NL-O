@@ -10,4 +10,4 @@ const sec=[
  {key:'X-DNS-Prefetch-Control',value:'off'}
 ];
 module.exports={poweredByHeader:false,productionBrowserSourceMaps:false,reactStrictMode:true,
- async headers(){const gizli=[{key:'X-Robots-Tag',value:'noindex, nofollow'}];return [{source:'/:path*',headers:sec},...['/admin/:path*','/admin','/panel/:path*','/panel','/saha','/kod','/login'].map(source=>({source,headers:gizli}))];}};
+ async headers(){const gizli=[{key:'X-Robots-Tag',value:'noindex, nofollow'}];return [{source:'/:path*',headers:sec},...['/admin/:path*','/admin','/panel/:path*','/panel','/saha','/kod','/login','/go','/t/:path*'].map(source=>({source,headers:gizli}))];}};

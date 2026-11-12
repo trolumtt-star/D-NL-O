@@ -22,12 +22,12 @@ Kullanıcıyla konuşulup "şimdi değil, sonra" denen özellikler. Paket kademe
 - [ ] Tüm diller, özel ses / ses kopyası, şube-departman yönlendirme
 
 ## Sonra düşünülecek fikirler
-- [ ] Kurye uygulaması **Dinlio Go** (PWA, ana ekrana eklenir): işletme paket başı ücret + davet kodu; sipariş gelince bağlı kuryelere push ("X'e sipariş geldi, teslim ücreti 60 ₺, 2,3 km"); ilk kabul eden alır; "Yemeği aldım" → Google Maps navigasyon, panelde Yolda; "Teslim ettim"; kurye günlük kazanç, işletme kurye başı paket sayısı. Para bizden geçmez. Dağıtım: işletme panelinde "Kurye ekle" QR'ı (davet kodu içinde) → Android: APK (GitHub Actions + Capacitor, arka plan GPS, imza anahtarı GitHub secrets'ta) / iPhone: PWA ana ekrana ekle. Kurye ekranı web sayfası olduğu için güncellemeler APK'sız gelir. Play Store YOK: dağıtım sadece GitHub Releases APK + QR.
+- [x] (web sürümü yayında: /go, takip /t/kod, panelde Dinlio Go kuryeleri kartı; APK ve arka plan konumu SIRADA) Kurye uygulaması **Dinlio Go** (PWA, ana ekrana eklenir): işletme paket başı ücret + davet kodu; sipariş gelince bağlı kuryelere push ("X'e sipariş geldi, teslim ücreti 60 ₺, 2,3 km"); ilk kabul eden alır; "Yemeği aldım" → Google Maps navigasyon, panelde Yolda; "Teslim ettim"; kurye günlük kazanç, işletme kurye başı paket sayısı. Para bizden geçmez. Dağıtım: işletme panelinde "Kurye ekle" QR'ı (davet kodu içinde) → Android: APK (GitHub Actions + Capacitor, arka plan GPS, imza anahtarı GitHub secrets'ta) / iPhone: PWA ana ekrana ekle. Kurye ekranı web sayfası olduğu için güncellemeler APK'sız gelir. Play Store YOK: dağıtım sadece GitHub Releases APK + QR.
   - KARAR: baştan APK (canlı konum için). Play Protect uyarısını azalt: güncel targetSdk, az izin, arka plan konum izni sadece teslimat başlayınca, hep aynı imza, gerekirse Google'a inceleme. 2027 geliştirici doğrulaması: öğrenci hesabı 20 cihaza kadar, fazlası için doğrulama (anne adına).
   - Müşteri takip linki: kurye "yemeği aldım" deyince müşteriye WhatsApp (wa.me, ücretsiz) veya SMS (Netgsm) ile link; sayfada canlı kurye konumu, tahmini varış, durum. Konum sadece teslimat sürerken paylaşılır, teslimde link kapanır. Sonra: serbest kurye havuzu (en yakına bildirim).
 - [ ] Komisyonsuz sipariş sistemi (restoranın kendi sipariş sayfası, ödeme restoranın kendi iyzico/PayTR hesabına; şirket sonrası). Satış cümlesi: "Yemeksepeti komisyonunun yarısıyla telefonunu biz açalım".
 - [ ] Sipariş / randevu onay SMS'i (Netgsm SMS)
-- [ ] Google yorum isteği (randevudan sonra link)
+- [x] Google yorum isteği (akşam SMS, Netgsm gelince çalışır)
 - [ ] Bekleme listesi (dolu randevuda, iptal olunca sıradakine haber)
 - [ ] Asistanın ses tonu seçimi (kadın/erkek, resmi/samimi)
 
@@ -42,9 +42,11 @@ Kullanıcıyla konuşulup "şimdi değil, sonra" denen özellikler. Paket kademe
 - Gelir sonra: öne çıkarma ücreti / küçük komisyon / Dinlio paketine dahil.
 
 ## Mesajlaşma (altyapı hazır: mesaj_kanallari, mesajlar tabloları, /api/mesaj/meta webhook; env META_VERIFY_TOKEN, META_APP_SECRET)
-- [ ] WhatsApp otomatik cevap, Instagram DM otomatik cevap
+- [x] WhatsApp otomatik cevap (lib/mesajCevap.js, Meta hattı gelince çalışır)
+- [ ] Instagram DM otomatik cevap
 - [ ] Sipariş onay mesajı, randevu onayı/hatırlatma, "yolda" takip linki, bekleme listesi bildirimi
-- [ ] Google yorum isteme, kampanya mesajı (İYS)
+- [x] Google yorum isteme
+- [ ] Kampanya mesajı (İYS)
 
 ## Rakiplerden alınacaklar (Kasım 2026 araştırması: Sesla, Sesera, Lidscope, buyur.co, CallTech, Sesvia, Callivo)
 Hemen yapılabilir:
@@ -74,3 +76,8 @@ Fiyat uyarısı: Sesera 499 ₺ / 150 dk (KDV dahil, ~3,3 ₺/dk) bizim Vapi mal
 - Web sitesi "Hemen ara" butonu: kullanıcı gereksiz buldu, fiyat kartından çıkarıldı.
 - Kendi altyapı (Pipecat/LiveKit): Vapi faturası ayda ~1000-1500 $'ı geçince.
 - Vapi eş zamanlı hat: 10 hat ilk ~10 restoran / 20-25 randevulu işletmeye yeter; "hat_dolu" kayıtları artınca hat al.
+
+## Sıradaki işler (Kasım 2026)
+- [ ] Dinlio Go APK (GitHub Actions + Capacitor, arka plan konumu, imza anahtarı)
+- [ ] Bekleme listesi, çok dil, Instagram DM cevabı, komisyonsuz sipariş sayfası
+- [ ] Netgsm gelince ilk gerçek aramada doğrula: ses hızı, kayıt kapatma, yetkiliye aktarma, giden arama

@@ -46,12 +46,14 @@ export async function POST(req){
    const vv={kampanya:pk.kampanya&&st.kampanya?.aktif?String(st.kampanya.metin||''):'',bilgi:pk.bilgi?String(st.bilgi||''):'',kapali:'',musteriAdi:'',sonIslem:'',aramaSayisi:'0'};
    const ov={},go=st.gorusme||{},ad=String(st.asistan?.ad||'').trim();
    const kayitCumle=go.kayit_kapali?'görüşme notlarımız hizmet kalitesi için tutulmaktadır':'görüşmemiz hizmet kalitesi için kaydedilmektedir';
-   Object.assign(vv,{asistanAdi:ad,kisilik:String(st.asistan?.kisilik||''),acilTanim:String(st.acil_tanim||''),maxDk:go.max_dk?String(go.max_dk):'',aktarma:pk.aktarma&&st.aktarma_no?'evet':''});
+   Object.assign(vv,{asistanAdi:ad,kisilik:String(st.asistan?.kisilik||''),acilTanim:String(st.acil_tanim||''),maxDk:go.max_dk?String(go.max_dk):'',hatirlatma:'',randevuSaati:'',aktarma:pk.aktarma&&st.aktarma_no?'evet':''});
    // Görüşme ayarları: süre sınırı, ses kaydını kapatma, yavaş konuşma, özel ses
    if(go.max_dk>=2&&go.max_dk<=30)ov.maxDurationSeconds=go.max_dk*60;
    if(go.kayit_kapali)ov.artifactPlan={recordingEnabled:false};
-   const oz=pk.ozelSes&&st.ozel_ses?.voiceId&&st.ozel_ses.aktif!==false?{provider:'11labs',voiceId:st.ozel_ses.voiceId,model:'eleven_multilingual_v2'}:null,ses=oz||(go.yavas&&st.vapi_voice?.provider?{...st.vapi_voice}:null);
-   if(ses){if(go.yavas)ses.speed=ses.provider==='11labs'?0.85:0.85;ov.voice=ses;}
+   const oz=pk.ozelSes&&st.ozel_ses?.voiceId&&st.ozel_ses.aktif!==false?{provider:'11labs',voiceId:st.ozel_ses.voiceId,model:'eleven_turbo_v2_5'}:null,ses=oz||(go.yavas&&st.vapi_voice?.provider?{...st.vapi_voice}:null);
+   // Hız ayarı sadece desteklediğini bildiğimiz ses sağlayıcılarında gönderilir; diğerlerinde yavaşlık prompttaki kuralla sağlanır
+   if(ses){if(go.yavas&&['11labs','openai','azure','playht'].includes(ses.provider))ses.speed=0.85;if(oz||ses.speed)ov.voice=ses;}
+   vv.yavas=go.yavas?'evet':'';
    if(ad)ov.firstMessage=`Merhaba, ${biz.name||'hoş geldiniz'}, ben yapay zeka asistanı ${ad}. ${kayitCumle[0].toUpperCase()+kayitCumle.slice(1)}. Size nasıl yardımcı olabilirim?`;
    // KAPALI SAAT / TATİL: tatil modu açıksa veya (randevulu işletmede) çalışma saati dışındaysa açılış değişir
    const kap=kapaliMi(st);
