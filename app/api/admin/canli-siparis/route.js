@@ -51,7 +51,9 @@ export async function POST(req){try{await requireAdmin(req);const {business_id}=
   if(c.ok){ids[ad]=c.d.id;sonuc.push(ad+': eklendi');}else sonuc.push(ad+': HATA '+c.status+' '+c.t.slice(0,120));}
  const yeniIds=[...new Set([...(m.toolIds||[]),...gerek.map(a=>ids[a]).filter(Boolean)])];
  const kurallar=gerek.map(a=>T2[a].k).filter(Boolean),blok='\n\n# ARAÇ KULLANIMI\n'+kurallar.join('\n')+'\n- Açılış mesajında müşteriyi adıyla selamladıysan onu sistemden tanıyorsun demektir: adını yeniden sorma, bilgilerini "yine aynı ... mı?" gibi kısa teyitlerle doğrula.';
- const msgs=(m.messages||[]).map(x=>{if(x.role!=='system')return x;let c=String(x.content||'').replace(/\n\n# (ARAÇ KULLANIMI|CANLI SİPARİŞ KAYDI|TARİFTEN ADRES BULMA)[\s\S]*?(?=\n\n# |$)/g,'');return {...x,content:c+blok};});
+ // Her aramada /api/vapi/assist bu değişkenleri doldurur (panelden yazılan bilgi bankası, kampanya, kapalı durumu)
+ const BILGI='\n\n# İŞLETME BİLGİLERİ\n- İşletmenin kendi yazdığı bilgiler (boşsa yok say; müşteri bunlarla ilgili sorarsa buradan cevap ver, burada yoksa uydurma, işletmeye soracağını söyle):\n{{bilgi}}\n- Güncel kampanya (boşsa yok say; doluysa sipariş veya randevu kesinleşince bir kez, kısaca ve baskı yapmadan söyle): {{kampanya}}\n- İşletme şu an kapalı mı: {{kapali}} ("evet" ise ne zaman açılacağını bilmiyorsan uydurma; talebi not al, açılınca dönüş yapılacağını söyle).';
+ const msgs=(m.messages||[]).map(x=>{if(x.role!=='system')return x;let c=String(x.content||'').replace(/\n\n# (ARAÇ KULLANIMI|CANLI SİPARİŞ KAYDI|TARİFTEN ADRES BULMA|İŞLETME BİLGİLERİ)[\s\S]*?(?=\n\n# |$)/g,'');return {...x,content:c+blok+BILGI};});
  // KVKK: açılış cümlesinde yapay zeka ve kayıt bilgilendirmesi
  const ilk=String(as.d.firstMessage||'');const bilgi=/kayd|kayıt/i.test(ilk)?ilk:(ilk?ilk.replace(/\s*$/,'')+' ':'')+'Ben yapay zeka asistanıyım, görüşmemiz hizmet kalitesi için kaydedilmektedir.';
  const p=await j('/assistant/'+b.vapi_assistant_id,{method:'PATCH',body:JSON.stringify({model:{...m,toolIds:yeniIds,messages:msgs},...(bilgi!==ilk?{firstMessage:bilgi}:{})})});
@@ -63,6 +65,9 @@ export async function POST(req){try{await requireAdmin(req);const {business_id}=
  else{props={customerName:S('string','Müşterinin adı'),statedPhone:S('string','Müşterinin söylediği telefon numarası')};for(const f of alanlar)props[f.k]=S('string',f.l);}
  const an=await j('/assistant/'+b.vapi_assistant_id,{method:'PATCH',body:JSON.stringify({analysisPlan:{...(as.d.analysisPlan||{}),structuredDataPlan:{enabled:true,schema:{type:'object',properties:props}}}})});
  const yedek=an.ok?'açık':'açılamadı ('+an.status+')';
+ // Kalite puanı: Vapi her görüşmeyi 1-10 puanlar (end-of-call-report → analysis.successEvaluation)
+ const kp=await j('/assistant/'+b.vapi_assistant_id,{method:'PATCH',body:JSON.stringify({analysisPlan:{...(as.d.analysisPlan||{}),structuredDataPlan:{enabled:true,schema:{type:'object',properties:props}},successEvaluationPlan:{enabled:true,rubric:'NumericScale'}}})});
+ sonuc.push('kalite puanı: '+(kp.ok?'açık':'açılamadı ('+kp.status+')'));
  // Telefon numarası: istek moduna alınır (paket sınırı, sadık müşteri ve durdurma için her aramada bize sorulur).
  if(b.vapi_phone_id){const t=await istekModunaAl(b,new URL(req.url).origin);sonuc.push(t.ok?'telefon numarası paket kurallarına bağlandı'+(e164(b.settings?.kota_yonlendirme||b.phone_number)?'':' (UYARI: işletmenin telefonu girilmemiş, hat dolunca aktarılacak numara yok)'):'telefon numarası ayarlanamadı: '+(t.error||t.reason));}
  else sonuc.push('işletmede Vapi telefon numarası (vapi_phone_id) yok, numara bağlanınca bu butona tekrar bas');

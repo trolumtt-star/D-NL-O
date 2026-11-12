@@ -19,10 +19,11 @@ Telefonla sipariş veya randevu alan her işletme: restoran, dönerci, pideci, k
 
 ## Fiyat
 Aylık paketler ABD doları ile fiyatlanır, Türk lirası karşılığı güncel kurla gösterilir. 1 hafta ücretsiz deneme vardır.
-- Başlangıç: 100 dakika, aynı anda 1 arama. Sipariş, randevu, panel, bildirim, akşam özeti.
-- Standart: 300 dakika, aynı anda 2 arama, 3 çalışan hesabı, sadık müşteriyi adıyla karşılama, ses kaydı dinleme.
-- Büyük: 600 dakika, aynı anda 3 arama, 10 çalışan hesabı.
-- Pro: 1500 dakika, aynı anda 5 arama, 20 çalışan hesabı.
+- Başlangıç: 100 dakika, aynı anda 1 arama. Sipariş, randevu, panel, bildirim, akşam özeti, kapalı saat / tatil modu, kara liste.
+- Standart: 300 dakika, aynı anda 2 arama, 3 çalışan hesabı, sadık müşteriyi adıyla karşılama, ses kaydı dinleme, müşteri defteri, kampanya duyurusu.
+- Büyük: 600 dakika, aynı anda 3 arama, 10 çalışan hesabı, bilgi bankası, haftalık rapor.
+- Pro: 1500 dakika, aynı anda 5 arama, 20 çalışan hesabı, görüşme kalite puanı.
+Yakında: WhatsApp ve Instagram mesajlarına otomatik cevap, sipariş ve randevu onay mesajları, Google yorum isteme.
 Hat dolarsa veya dakika biterse aramalar işletmenin kendi telefonuna yönlenir, müşteri kaybolmaz. Güncel fiyatlar: ${SITE}/
 
 ## Bağlantılar

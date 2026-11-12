@@ -3,22 +3,22 @@
 Kullanıcıyla konuşulup "şimdi değil, sonra" denen özellikler. Paket kademeleri: lib/paket.js.
 
 ## Herkese (Başlangıç+)
-- [ ] Kapalı saat / tatil modu: kapalıyken farklı açılış ("yarın 9'da açılıyoruz, şimdiden alayım mı"), panelde "Bugün kapalıyım" tuşu
-- [ ] Kara liste: şaka/rahatsız eden numaralar asistana bağlanmaz (assist ucunda)
+- [x] Kapalı saat / tatil modu: kapalıyken farklı açılış ("yarın 9'da açılıyoruz, şimdiden alayım mı"), panelde "Bugün kapalıyım" tuşu
+- [x] Kara liste: şaka/rahatsız eden numaralar asistana bağlanmaz (assist ucunda)
 
 ## Standart
-- [ ] Müşteri defteri: arayan herkes, arama sayısı, son talep, toplam sipariş, Excel indir
-- [ ] Kampanya duyurusu: panelden yazılan kampanyayı asistan uygun anda söyler
+- [x] Müşteri defteri: arayan herkes, arama sayısı, son talep, toplam sipariş, Excel indir
+- [x] Kampanya duyurusu: panelden yazılan kampanyayı asistan uygun anda söyler
 - [ ] Görüşme sırasında yetkiliye aktarma (Vapi transferCall; Netgsm gelince test, aktarılan dakika paketten düşsün)
 
 ## Büyük
-- [ ] Bilgi bankası (önce yazılı SSS, sonra PDF)
-- [ ] Haftalık rapor (pazartesi bildirimi: arama, sipariş, yoğun saat, yönlendirilen arama)
+- [x] Bilgi bankası (önce yazılı SSS, sonra PDF)
+- [x] Haftalık rapor (pazartesi bildirimi: arama, sipariş, yoğun saat, yönlendirilen arama)
 - [ ] Randevu hatırlatma araması (giden arama, Netgsm gerekli, sadece randevulu müşteri; İYS)
 - [ ] İkinci dil (İngilizce / Arapça)
 
 ## Pro
-- [ ] Kalite puanı (Gemini görüşmeyi puanlar, kötüler kırmızı)
+- [x] Kalite puanı (Gemini görüşmeyi puanlar, kötüler kırmızı)
 - [ ] Tüm diller, özel ses / ses kopyası, şube-departman yönlendirme
 
 ## Sonra düşünülecek fikirler
@@ -41,7 +41,12 @@ Kullanıcıyla konuşulup "şimdi değil, sonra" denen özellikler. Paket kademe
 - Kurye ücreti (Dinlio Go) müşterinin ödediği teslimat ücretinden ayrı: taban (~60 ₺) + km başı ek + gece/yağmur primi, işletme ayarlar. Türkiye ortalaması paket başı ~70 ₺ (Ocak 2026).
 - Gelir sonra: öne çıkarma ücreti / küçük komisyon / Dinlio paketine dahil.
 
+## Mesajlaşma (altyapı hazır: mesaj_kanallari, mesajlar tabloları, /api/mesaj/meta webhook; env META_VERIFY_TOKEN, META_APP_SECRET)
+- [ ] WhatsApp otomatik cevap, Instagram DM otomatik cevap
+- [ ] Sipariş onay mesajı, randevu onayı/hatırlatma, "yolda" takip linki, bekleme listesi bildirimi
+- [ ] Google yorum isteme, kampanya mesajı (İYS)
+
 ## Kararlar
-- Web sitesi "Hemen ara" butonu: kullanıcı gereksiz buldu, fiyat kartından çıkarılabilir.
+- Web sitesi "Hemen ara" butonu: kullanıcı gereksiz buldu, fiyat kartından çıkarıldı.
 - Kendi altyapı (Pipecat/LiveKit): Vapi faturası ayda ~1000-1500 $'ı geçince.
 - Vapi eş zamanlı hat: 10 hat ilk ~10 restoran / 20-25 randevulu işletmeye yeter; "hat_dolu" kayıtları artınca hat al.

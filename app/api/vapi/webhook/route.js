@@ -1,4 +1,4 @@
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {ayikla,bekleyenleriOku} from '@/lib/ayikla';import {durdur} from '@/lib/vapi';import {paketOf} from '@/lib/paket';
+import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {ayikla,bekleyenleriOku} from '@/lib/ayikla';import {durdur} from '@/lib/vapi';import {paketOf} from '@/lib/paket';import {bildir} from '@/lib/bildir';
 export const maxDuration=60;
 const today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Istanbul'});
 const log=(type,bid,cid,error)=>adminSb.from('webhook_events').insert({type,business_id:bid||null,vapi_call_id:cid||null,payload:{error}});
@@ -23,6 +23,11 @@ export async function POST(req){
   if(error){await log('reddedildi',bid,call.id,'Kayıt yazılamadı: '+error.message);return NextResponse.json({error:error.message},{status:500});}
   if(!cid)return NextResponse.json({ok:true,duplicate:true});
   const rec=m.recordingUrl||m.artifact?.recordingUrl||m.artifact?.recording?.mono?.combinedUrl||null;if(rec){const {data:bb}=await adminSb.from('businesses').select('quota_minutes_total,settings').eq('id',bid).maybeSingle();if(paketOf(bb).kayit)await adminSb.from('calls').update({audio_url:String(rec).slice(0,600)}).eq('id',cid);}
+  // Kalite puanı (Vapi'nin 1-10 değerlendirmesi). Pro pakette 3 ve altı puanlı görüşme için bildirim gider.
+  {const kp=parseInt(String(m.analysis?.successEvaluation??'').match(/\d+/)?.[0]);
+   if(kp>=1&&kp<=10){await adminSb.from('calls').update({kalite:kp}).eq('id',cid);
+    if(kp<=3){const {data:bk}=await adminSb.from('businesses').select('quota_minutes_total,settings').eq('id',bid).maybeSingle();
+     if(paketOf(bk).kalite)try{await bildir(bid,`⚠ Kötü giden bir görüşme var (puan ${kp}/10). Panelde Çağrılar sekmesinden konuşmayı kontrol edin.`,'bildirim');}catch{}}}}
   // 2) Kota bu çağrıyla bittiyse, Vapi'deki numarayı gerçekten kapat (kota bitti asistanına çevir)
   const {data:bz}=await adminSb.from('businesses').select('vertical,status,vapi_paused,vapi_phone_id,vapi_assistant_id').eq('id',bid).single();
   if(bz?.status==='suspended'&&!bz.vapi_paused){
