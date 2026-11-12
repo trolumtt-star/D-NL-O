@@ -21,6 +21,13 @@ Kullanıcıyla konuşulup "şimdi değil, sonra" denen özellikler. Paket kademe
 - [ ] Kalite puanı (Gemini görüşmeyi puanlar, kötüler kırmızı)
 - [ ] Tüm diller, özel ses / ses kopyası, şube-departman yönlendirme
 
+## Sonra düşünülecek fikirler
+- [ ] Kurye ekranı / kurye takibi (restoran): kuryeye link, adres + harita + telefon, "yola çıktım / teslim ettim", panelde durum
+- [ ] Sipariş / randevu onay SMS'i (Netgsm SMS)
+- [ ] Google yorum isteği (randevudan sonra link)
+- [ ] Bekleme listesi (dolu randevuda, iptal olunca sıradakine haber)
+- [ ] Asistanın ses tonu seçimi (kadın/erkek, resmi/samimi)
+
 ## Kararlar
 - Web sitesi "Hemen ara" butonu: kullanıcı gereksiz buldu, fiyat kartından çıkarılabilir.
 - Kendi altyapı (Pipecat/LiveKit): Vapi faturası ayda ~1000-1500 $'ı geçince.
