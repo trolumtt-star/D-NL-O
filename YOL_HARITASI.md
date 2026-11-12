@@ -22,7 +22,8 @@ Kullanıcıyla konuşulup "şimdi değil, sonra" denen özellikler. Paket kademe
 - [ ] Tüm diller, özel ses / ses kopyası, şube-departman yönlendirme
 
 ## Sonra düşünülecek fikirler
-- [ ] Kurye ekranı / kurye takibi (restoran): kuryeye link, adres + harita + telefon, "yola çıktım / teslim ettim", panelde durum
+- [ ] Kurye uygulaması (PWA, ana ekrana eklenir): işletme paket başı ücret + davet kodu; sipariş gelince bağlı kuryelere push ("X'e sipariş geldi, teslim ücreti 60 ₺, 2,3 km"); ilk kabul eden alır; "Yemeği aldım" → Google Maps navigasyon, panelde Yolda; "Teslim ettim"; kurye günlük kazanç, işletme kurye başı paket sayısı. Para bizden geçmez. Arka plan GPS yok (ileride APK). Sonra: serbest kurye havuzu (en yakına bildirim).
+- [ ] Komisyonsuz sipariş sistemi (restoranın kendi sipariş sayfası, ödeme restoranın kendi iyzico/PayTR hesabına; şirket sonrası). Satış cümlesi: "Yemeksepeti komisyonunun yarısıyla telefonunu biz açalım".
 - [ ] Sipariş / randevu onay SMS'i (Netgsm SMS)
 - [ ] Google yorum isteği (randevudan sonra link)
 - [ ] Bekleme listesi (dolu randevuda, iptal olunca sıradakine haber)
