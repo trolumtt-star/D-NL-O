@@ -44,10 +44,18 @@ export async function POST(req){
      return NextResponse.json({destination:{type:'number',number:num,message:'Şu an tüm hatlarımız dolu, sizi doğrudan işletmeye bağlıyorum.'}});}}
    // Asistanın promptundaki {{kampanya}}, {{bilgi}}, {{kapali}} değişkenleri her aramada buradan dolar.
    const vv={kampanya:pk.kampanya&&st.kampanya?.aktif?String(st.kampanya.metin||''):'',bilgi:pk.bilgi?String(st.bilgi||''):'',kapali:'',musteriAdi:'',sonIslem:'',aramaSayisi:'0'};
-   const ov={};
+   const ov={},go=st.gorusme||{},ad=String(st.asistan?.ad||'').trim();
+   const kayitCumle=go.kayit_kapali?'görüşme notlarımız hizmet kalitesi için tutulmaktadır':'görüşmemiz hizmet kalitesi için kaydedilmektedir';
+   Object.assign(vv,{asistanAdi:ad,kisilik:String(st.asistan?.kisilik||''),acilTanim:String(st.acil_tanim||''),maxDk:go.max_dk?String(go.max_dk):'',aktarma:pk.aktarma&&st.aktarma_no?'evet':''});
+   // Görüşme ayarları: süre sınırı, ses kaydını kapatma, yavaş konuşma, özel ses
+   if(go.max_dk>=2&&go.max_dk<=30)ov.maxDurationSeconds=go.max_dk*60;
+   if(go.kayit_kapali)ov.artifactPlan={recordingEnabled:false};
+   const oz=pk.ozelSes&&st.ozel_ses?.voiceId&&st.ozel_ses.aktif!==false?{provider:'11labs',voiceId:st.ozel_ses.voiceId,model:'eleven_multilingual_v2'}:null,ses=oz||(go.yavas&&st.vapi_voice?.provider?{...st.vapi_voice}:null);
+   if(ses){if(go.yavas)ses.speed=ses.provider==='11labs'?0.85:0.85;ov.voice=ses;}
+   if(ad)ov.firstMessage=`Merhaba, ${biz.name||'hoş geldiniz'}, ben yapay zeka asistanı ${ad}. ${kayitCumle[0].toUpperCase()+kayitCumle.slice(1)}. Size nasıl yardımcı olabilirim?`;
    // KAPALI SAAT / TATİL: tatil modu açıksa veya (randevulu işletmede) çalışma saati dışındaysa açılış değişir
    const kap=kapaliMi(st);
-   if(kap){vv.kapali='evet';ov.firstMessage=`Merhaba, ${biz.name||'işletmemiz'} şu an kapalı.${st.tatil?.aktif&&st.tatil.mesaj?' '+st.tatil.mesaj:''} Ben yapay zeka asistanıyım, görüşmemiz hizmet kalitesi için kaydedilmektedir. ${!st.tatil?.aktif&&st.working_hours?' Ama randevunuzu hemen ayarlayabilirim, hangi gün size uygun?':' İsterseniz talebinizi şimdiden not alayım, açılınca size dönüş yapılsın.'}`;}
+   if(kap){vv.kapali='evet';ov.firstMessage=`Merhaba, ${biz.name||'işletmemiz'} şu an kapalı.${st.tatil?.aktif&&st.tatil.mesaj?' '+st.tatil.mesaj:''} Ben yapay zeka asistanı${ad?' '+ad:'yım'}, ${kayitCumle}.${!st.tatil?.aktif&&st.working_hours?' Ama randevunuzu hemen ayarlayabilirim, hangi gün size uygun?':' İsterseniz talebinizi şimdiden not alayım, açılınca size dönüş yapılsın.'}`;}
    // SADIK MÜŞTERİ: aynı numara daha önce aradıysa ve adını biliyorsak açılışı kişiselleştir.
    if(pk.sadik&&arayan.length===10){try{
      const {data:gec}=await adminSb.from('calls').select('customer_name,orders,extracted,created_at')
@@ -57,8 +65,8 @@ export async function POST(req){
      if(g){const ex=g.extracted||{};
       // Arayan numara taklit edilebildiği için geçmiş sipariş/şikayet sesli söylenmez; sadece asistanın bağlamına verilir.
       vv.musteriAdi=g.customer_name;vv.sonIslem=String(g.orders||ex.service||ex.complaint||ex.interest||ex.issue||ex.reason||'').slice(0,60);vv.aramaSayisi=String((gec||[]).length);
-      ov.firstMessage=kap?`Hoş geldiniz ${g.customer_name}! ${biz.name||'İşletmemiz'} şu an kapalı ama ben buradayım; görüşmemiz hizmet kalitesi için kaydedilmektedir. ${!st.tatil?.aktif&&st.working_hours?'Randevunuzu ayarlayayım mı?':'Talebinizi not alayım mı?'}`
-       :`Hoş geldiniz ${g.customer_name}, sizi yeniden duymak çok güzel! Ben ${biz.name||'işletmenin'} yapay zeka asistanıyım, görüşmemiz hizmet kalitesi için kaydedilmektedir. Bugün nasıl yardımcı olabilirim?`;}
+      ov.firstMessage=kap?`Hoş geldiniz ${g.customer_name}! ${biz.name||'İşletmemiz'} şu an kapalı ama ben buradayım; ${kayitCumle}. ${!st.tatil?.aktif&&st.working_hours?'Randevunuzu ayarlayayım mı?':'Talebinizi not alayım mı?'}`
+       :`Hoş geldiniz ${g.customer_name}, sizi yeniden duymak çok güzel! Ben ${biz.name||'işletmenin'} yapay zeka asistanı${ad?' '+ad:'yım'}, ${kayitCumle}. Bugün nasıl yardımcı olabilirim?`;}
    }catch{}}
    return NextResponse.json({assistantId:biz.vapi_assistant_id,assistantOverrides:{...ov,variableValues:vv}});
   }

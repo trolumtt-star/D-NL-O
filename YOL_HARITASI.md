@@ -48,24 +48,24 @@ Kullanıcıyla konuşulup "şimdi değil, sonra" denen özellikler. Paket kademe
 
 ## Rakiplerden alınacaklar (Kasım 2026 araştırması: Sesla, Sesera, Lidscope, buyur.co, CallTech, Sesvia, Callivo)
 Hemen yapılabilir:
-- [ ] Görüşme süresi sınırı (dolunca kibar veda) — Callivo
-- [ ] Kayıt itirazında kaydı silme, ses kaydını kapatma seçeneği — Callivo, Sesera
-- [ ] Yavaş/net konuşma ayarı — Callivo
-- [ ] Asistana ad ve kişilik verme — Sesera
-- [ ] Teslimat bölgesi kontrolü (bölge dışını kibarca reddet) — Sesla
-- [ ] Acil / nöbetçi ayrımı (acil işi işaretle, öncelikli bildir) — Sesla
-- [ ] Duygu, niyet ve takip önerisi (çağrı sonu analiz) — CallTech
-- [ ] Bildirimde Onayla / Reddet tuşları (push action) — Lidscope'un WhatsApp onay akışının bizdeki karşılığı
-- [ ] Geri arama listesi (bilgi alınamayan / aktarılamayan aramalar) — Sesera
-- [ ] "Siparişim nerede?" cevabı — Sesera, Callivo
-- [ ] Çıkış webhook'u + API anahtarı: işletmenin kendi sistemine/CRM'ine çağrı verisi — buyur, CallTech, Sesera Dev
+- [x] Görüşme süresi sınırı (dolunca kibar veda) — Callivo
+- [x] Kayıt itirazında kaydı silme, ses kaydını kapatma seçeneği — Callivo, Sesera
+- [x] Yavaş/net konuşma ayarı — Callivo
+- [x] Asistana ad ve kişilik verme — Sesera
+- [x] Teslimat bölgesi kontrolü (bölge dışını kibarca reddet) — Sesla
+- [x] Acil / nöbetçi ayrımı (acil işi işaretle, öncelikli bildir) — Sesla
+- [x] Duygu, niyet ve takip önerisi (çağrı sonu analiz) — CallTech
+- [x] Bildirimde Onayla / Reddet tuşları (push action) — Lidscope'un WhatsApp onay akışının bizdeki karşılığı
+- [x] Geri arama listesi (bilgi alınamayan / aktarılamayan aramalar) — Sesera
+- [x] "Siparişim nerede?" cevabı — Sesera, Callivo
+- [x] Çıkış webhook'u + API anahtarı: işletmenin kendi sistemine/CRM'ine çağrı verisi — buyur, CallTech, Sesera Dev
 - [ ] Çok dil (en az İngilizce, Arapça, Almanca, Rusça) — Sesera 60 dil, buyur 30+
-- [ ] Yıllık ödeme indirimi — Sesla %25, Sesera %10
-Dış hesap / onay gerekir:
-- [ ] Giden arama: randevu teyidi/hatırlatma, kampanya + aranmak istemeyenler listesi (İYS) — Netgsm
-- [ ] SMS hatırlatma — Netgsm
-- [ ] Google / Outlook takvim — Google OAuth onayı
-- [ ] Ses klonlama — ElevenLabs maliyeti
+- [x] Yıllık ödeme indirimi — Sesla %25, Sesera %10
+Dış hesap / onay gerekir (KOD HAZIR, anahtar eklenince açılır — admin > Sistem > Entegrasyonlar):
+- [~] Giden arama: randevu teyidi/hatırlatma, kampanya + aranmak istemeyenler listesi (İYS) — Netgsm
+- [~] SMS hatırlatma — Netgsm
+- [~] Google / Outlook takvim — Google OAuth onayı
+- [~] Ses klonlama — ElevenLabs maliyeti
 - [ ] Bayi / ajans programı (white label) — Sesera, Lidscope
 Önerilmeyen: sosyal medya içerik ve Meta reklam (Lidscope, Callivo), sürükle-bırak iş akışı editörü (Sesla), web sesli arama butonu.
 Fiyat uyarısı: Sesera 499 ₺ / 150 dk (KDV dahil, ~3,3 ₺/dk) bizim Vapi maliyetimizin (~0,09 $/dk) altında; fiyatla değil sektöre özel özellikle (sipariş + adres + kurye) rekabet.

@@ -1,7 +1,8 @@
 // Akşam özeti (her gün 21:00 Türkiye): her işletmenin Bildirimler sekmesine ve telefonlarına günün özeti.
+// Ayrıca yarınki randevulara hatırlatma (SMS/arama) gider.
 // Pazartesi akşamı Büyük/Pro işletmelere haftalık rapor da gider.
 // Günde bir kez çalışır (settings.son_ozet); tekrar çağrılsa da aynı gün ikinci özet gitmez.
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {bildir} from '@/lib/bildir';import {paketOf} from '@/lib/paket';
+import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {bildir} from '@/lib/bildir';import {paketOf} from '@/lib/paket';import {hatirlatmalariGonder} from '@/lib/hatirlatma';
 export const dynamic='force-dynamic';export const maxDuration=60;
 const TZ='Europe/Istanbul',gun=d=>new Date(d).toLocaleDateString('sv-SE',{timeZone:TZ});
 // Türkiye saatine göre bugünün başlangıcı (UTC+3, yaz saati yok)
@@ -51,4 +52,6 @@ export async function GET(req){
    await bildir(b.id,satir[0]+'\n'+satir.slice(1).join('\n'),'ozet');
    const {data:g}=await adminSb.from('businesses').select('settings').eq('id',b.id).single();
    await adminSb.from('businesses').update({settings:{...(g?.settings||{}),son_haftalik:bugun}}).eq('id',b.id);haftalik++;}}
- return NextResponse.json({ok:true,gonderilen,haftalik});}
+ // Yarınki randevular için hatırlatma (SMS veya arama; Büyük+)
+ let hat=null;try{hat=await hatirlatmalariGonder({butce:20000});}catch(e){hat={hata:String(e.message||e).slice(0,120)};}
+ return NextResponse.json({ok:true,gonderilen,haftalik,hatirlatma:hat});}

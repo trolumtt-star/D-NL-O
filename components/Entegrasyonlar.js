@@ -1,0 +1,29 @@
+'use client';
+// Admin → Sistem: dış hizmet bağlantıları. Her biri Vercel'e anahtar eklenince kendiliğinden açılır; burada durum, kurulum adımları ve test var.
+import {useEffect,useState} from 'react';
+const ADIM={
+ vapi:['Vapi (telefon asistanı)',['Zaten bağlı olmalı: VAPI_API_KEY.']],
+ netgsm:['Netgsm (SMS, Türk numarası)',['Netgsm\'den sabit numara + SMS paketi alın, numarayı "SIP / IP santral" olarak açtırın.','SMS gönderici başlığınızı (ör. DINLIOAI) onaylatın.','Vercel > Settings > Environment Variables: NETGSM_USERCODE, NETGSM_PASSWORD (API alt kullanıcısı), NETGSM_HEADER.','SIP bilgilerini Vapi > Phone Numbers > Import (SIP trunk) kısmına girin; numara Vapi\'de görünür.','Aşağıdan test SMS\'i gönderin.']],
+ eposta:['E-posta (arama özeti)',['resend.com\'da ücretsiz hesap açın, alan adınızı ekleyip DNS kayıtlarını girin.','Vercel: RESEND_API_KEY ve RESEND_FROM (ör. Dinlio AI <bildirim@alanadiniz.com>).','Aşağıdan test e-postası gönderin.']],
+ whatsapp:['WhatsApp Business',['business.facebook.com\'da işletme hesabı + developers.facebook.com\'da uygulama açın, WhatsApp ürününü ekleyin.','Sistem kullanıcısı için kalıcı anahtar üretin → Vercel: META_WA_TOKEN.','Uygulama gizli anahtarı → META_APP_SECRET; kendi belirlediğiniz bir kelime → META_VERIFY_TOKEN.','Webhook adresi: {SITE}/api/mesaj/meta, doğrulama kelimesi META_VERIFY_TOKEN; "messages" olayına abone olun.','İşletmenin WhatsApp numara kimliğini (Phone number ID) aşağıdan işletmeye bağlayın.']],
+ instagram:['Instagram DM',['Aynı Meta uygulamasına Instagram ürününü ekleyin, işletmenin Instagram profesyonel hesabını bağlayın.','Webhook adresi aynı: {SITE}/api/mesaj/meta; "messages" olayına abone olun.','Instagram hesap kimliğini aşağıdan işletmeye bağlayın.']],
+ google:['Google Takvim',['console.cloud.google.com\'da proje açın, Google Calendar API\'yi etkinleştirin.','OAuth izin ekranı: uygulama adı Dinlio AI, kapsam calendar.events; yayına alın (Google incelemesi birkaç hafta sürebilir, o sürede 100 test kullanıcısı eklenebilir).','OAuth istemcisi (Web): yönlendirme adresi {SITE}/api/google/donus.','Vercel: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET. İşletmeler panelden "Google Takvimi bağla" der.']],
+ elevenlabs:['ElevenLabs (özel ses)',['elevenlabs.io\'da ses kopyalama içeren bir plan alın, API anahtarı üretin.','Vercel: ELEVENLABS_API_KEY.','Aynı anahtarı Vapi > Provider Keys > ElevenLabs alanına da girin (asistan bu sesle konuşabilsin).','Pro işletmeler panelden ses kaydı yükler.']]};
+export default function Entegrasyonlar({tok}){
+ const [d,setD]=useState(null),[msg,setMsg]=useState(''),[f,setF]=useState({no:'',adres:'',business_id:'',tur:'whatsapp',dis_id:''}),[ac,setAc]=useState('');
+ const api=async(m,body)=>{const r=await fetch('/api/admin/entegrasyon',{method:m,headers:{'content-type':'application/json',authorization:'Bearer '+await tok()},body:body?JSON.stringify(body):undefined});const j=await r.json();if(!r.ok)throw new Error(j.error||'Hata');return j;};
+ const yukle=()=>api('GET').then(setD).catch(e=>setMsg(e.message));useEffect(()=>{yukle();},[]);
+ const is=async(b)=>{setMsg('');try{const j=await api('POST',b);setMsg(j.mesaj||'Tamam.');yukle();}catch(e){setMsg(e.message);}};
+ if(!d)return <div className="card sec2"><h2>Entegrasyonlar</h2><p className="mut">{msg||'Yükleniyor…'}</p></div>;
+ return <div className="card sec2"><h2>Entegrasyonlar</h2><p className="mut">Anahtarlar sadece Vercel ortam değişkenlerine girilir, sohbete veya koda yazılmaz. Eklendikten sonra yeniden yayın (redeploy) gerekir.</p>
+  <div style={{display:'grid',gap:8,marginTop:10}}>{Object.entries(ADIM).map(([k,[ad,adim]])=><div key={k} style={{border:'1px solid var(--line,#333)',borderRadius:10,padding:10}}>
+   <div className="row" style={{justifyContent:'space-between'}}><b>{ad}</b><span><span className={'tag'+(d.durum[k]?'':' x')}>{d.durum[k]?'Bağlı':'Bağlı değil'}</span> <a className="lnk" onClick={()=>setAc(ac===k?'':k)}>{ac===k?'Gizle':'Nasıl kurulur?'}</a></span></div>
+   {ac===k&&<ol style={{margin:'8px 0 0 18px'}}>{adim.map((x,i)=><li key={i} className="mut" style={{marginBottom:4}}>{x.replaceAll('{SITE}',d.site)}</li>)}</ol>}</div>)}</div>
+  <div className="frm" style={{marginTop:12}}><label>Test SMS numarası<input value={f.no} onChange={e=>setF({...f,no:e.target.value})} placeholder="05xx xxx xx xx"/></label><button className="g" disabled={!d.durum.netgsm} onClick={()=>is({islem:'sms_test',no:f.no})}>Test SMS</button>
+   <label>Test e-posta<input value={f.adres} onChange={e=>setF({...f,adres:e.target.value})} placeholder="ornek@mail.com"/></label><button className="g" disabled={!d.durum.eposta} onClick={()=>is({islem:'eposta_test',adres:f.adres})}>Test e-posta</button></div>
+  <h3 style={{marginTop:14}}>İşletmeye mesaj kanalı bağla</h3>
+  <div className="frm"><label>İşletme ID<input value={f.business_id} onChange={e=>setF({...f,business_id:e.target.value.trim()})} placeholder="işletmenin uuid'si"/></label>
+   <label>Kanal<select value={f.tur} onChange={e=>setF({...f,tur:e.target.value})}><option value="whatsapp">WhatsApp (Phone number ID)</option><option value="instagram">Instagram (hesap ID)</option></select></label>
+   <label>Kimlik<input value={f.dis_id} onChange={e=>setF({...f,dis_id:e.target.value})} placeholder="sadece rakam"/></label><button onClick={()=>is({islem:'kanal_ekle',...f})}>Bağla</button></div>
+  {d.kanallar.length>0&&<table style={{marginTop:8}}><tbody>{d.kanallar.map(k=><tr key={k.id}><td>{k.businesses?.name}</td><td>{k.tur}</td><td style={{fontFamily:'monospace'}}>{k.dis_id}</td><td><a className="lnk" onClick={()=>is({islem:'kanal_sil',id:k.id})}>Kaldır</a></td></tr>)}</tbody></table>}
+  {msg&&<p className="mut" style={{marginTop:8}}>{msg}</p>}</div>;}
