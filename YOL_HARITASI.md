@@ -81,3 +81,6 @@ Fiyat uyarısı: Sesera 499 ₺ / 150 dk (KDV dahil, ~3,3 ₺/dk) bizim Vapi mal
 - [ ] Dinlio Go APK (GitHub Actions + Capacitor, arka plan konumu, imza anahtarı)
 - [ ] Bekleme listesi, çok dil, Instagram DM cevabı, komisyonsuz sipariş sayfası
 - [ ] Netgsm gelince ilk gerçek aramada doğrula: ses hızı, kayıt kapatma, yetkiliye aktarma, giden arama
+
+## Teklif asistanı (Kasım 2026)
+- [x] Giden satış araması: kuyruk (teklif_arama), aranmayacaklar, demo saatleri, zincirleme arama, hafta içi saat sınırı, admin > Müşteri bulma ekranı. Netgsm numarası Vapi'ye eklenince çalışır; randevu gelince DESTEK numarasına SMS.
