@@ -1,0 +1,27 @@
+# Dinlio yol haritası (sonra eklenecekler)
+
+Kullanıcıyla konuşulup "şimdi değil, sonra" denen özellikler. Paket kademeleri: lib/paket.js.
+
+## Herkese (Başlangıç+)
+- [ ] Kapalı saat / tatil modu: kapalıyken farklı açılış ("yarın 9'da açılıyoruz, şimdiden alayım mı"), panelde "Bugün kapalıyım" tuşu
+- [ ] Kara liste: şaka/rahatsız eden numaralar asistana bağlanmaz (assist ucunda)
+
+## Standart
+- [ ] Müşteri defteri: arayan herkes, arama sayısı, son talep, toplam sipariş, Excel indir
+- [ ] Kampanya duyurusu: panelden yazılan kampanyayı asistan uygun anda söyler
+- [ ] Görüşme sırasında yetkiliye aktarma (Vapi transferCall; Netgsm gelince test, aktarılan dakika paketten düşsün)
+
+## Büyük
+- [ ] Bilgi bankası (önce yazılı SSS, sonra PDF)
+- [ ] Haftalık rapor (pazartesi bildirimi: arama, sipariş, yoğun saat, yönlendirilen arama)
+- [ ] Randevu hatırlatma araması (giden arama, Netgsm gerekli, sadece randevulu müşteri; İYS)
+- [ ] İkinci dil (İngilizce / Arapça)
+
+## Pro
+- [ ] Kalite puanı (Gemini görüşmeyi puanlar, kötüler kırmızı)
+- [ ] Tüm diller, özel ses / ses kopyası, şube-departman yönlendirme
+
+## Kararlar
+- Web sitesi "Hemen ara" butonu: kullanıcı gereksiz buldu, fiyat kartından çıkarılabilir.
+- Kendi altyapı (Pipecat/LiveKit): Vapi faturası ayda ~1000-1500 $'ı geçince.
+- Vapi eş zamanlı hat: 10 hat ilk ~10 restoran / 20-25 randevulu işletmeye yeter; "hat_dolu" kayıtları artınca hat al.
