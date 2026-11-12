@@ -1,4 +1,4 @@
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {ayikla,bekleyenleriOku} from '@/lib/ayikla';import {durdur} from '@/lib/vapi';
+import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {ayikla,bekleyenleriOku} from '@/lib/ayikla';import {durdur} from '@/lib/vapi';import {paketOf} from '@/lib/paket';
 export const maxDuration=60;
 const today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Istanbul'});
 const log=(type,bid,cid,error)=>adminSb.from('webhook_events').insert({type,business_id:bid||null,vapi_call_id:cid||null,payload:{error}});
@@ -22,7 +22,7 @@ export async function POST(req){
   const {data:cid,error}=await adminSb.rpc('record_call',{p_business:bid,p_call:call.id,p_phone:call.customer?.number||null,p_sec:sec,p_name:v.customerName||null,p_orders:v.orders||null,p_address:v.address||null,p_summary:m.summary||m.analysis?.summary||null,p_transcript:transcript});
   if(error){await log('reddedildi',bid,call.id,'Kayıt yazılamadı: '+error.message);return NextResponse.json({error:error.message},{status:500});}
   if(!cid)return NextResponse.json({ok:true,duplicate:true});
-  const rec=m.recordingUrl||m.artifact?.recordingUrl||m.artifact?.recording?.mono?.combinedUrl||null;if(rec)await adminSb.from('calls').update({audio_url:String(rec).slice(0,600)}).eq('id',cid);
+  const rec=m.recordingUrl||m.artifact?.recordingUrl||m.artifact?.recording?.mono?.combinedUrl||null;if(rec){const {data:bb}=await adminSb.from('businesses').select('quota_minutes_total,settings').eq('id',bid).maybeSingle();if(paketOf(bb).kayit)await adminSb.from('calls').update({audio_url:String(rec).slice(0,600)}).eq('id',cid);}
   // 2) Kota bu çağrıyla bittiyse, Vapi'deki numarayı gerçekten kapat (kota bitti asistanına çevir)
   const {data:bz}=await adminSb.from('businesses').select('vertical,status,vapi_paused,vapi_phone_id,vapi_assistant_id').eq('id',bid).single();
   if(bz?.status==='suspended'&&!bz.vapi_paused){

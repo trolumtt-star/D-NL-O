@@ -1,4 +1,4 @@
-import {NextResponse} from 'next/server';import {adminSb,requireAdmin} from '@/lib/admin';
+import {NextResponse} from 'next/server';import {adminSb,requireAdmin} from '@/lib/admin';import {istekModunaAl,e164} from '@/lib/vapi';
 export const dynamic='force-dynamic';export const maxDuration=45;
 // Sektöre göre gereken bütün Vapi araçlarını oluşturur, asistana bağlar ve prompta kullanım kurallarını ekler.
 // Asistanda aynı isimde araç zaten varsa onu tekrar oluşturmaz, sadece adresini günceller.
@@ -20,7 +20,7 @@ const TANIM={
 const arac=(ad,T,url,sec)=>{const t=T[ad];return {type:'function',async:false,function:{name:ad,description:t.d,parameters:{type:'object',properties:t.p,required:t.r}},messages:[{type:'request-start',content:t.m}],server:sec?{url,headers:{'x-vapi-secret':sec}}:{url}};};
 export async function POST(req){try{await requireAdmin(req);const {business_id}=await req.json();
  const key=process.env.VAPI_API_KEY,sec=process.env.VAPI_SECRET;if(!key)throw new Error('Vercel\'de VAPI_API_KEY tanımlı değil.');
- const {data:b}=await adminSb.from('businesses').select('id,vertical,plan,vapi_assistant_id,settings').eq('id',business_id).single();
+ const {data:b}=await adminSb.from('businesses').select('id,vertical,plan,phone_number,vapi_phone_id,vapi_assistant_id,settings').eq('id',business_id).single();
  if(!b?.vapi_assistant_id)throw new Error('Bu işletmede Vapi asistan kimliği yok.');
  const V=b.vertical||'restaurant';
  // Sektörün araştırılmış yapılandırması: alanlar, terimler, notlar (Sektörler sekmesinden yönetilir)
@@ -63,6 +63,9 @@ export async function POST(req){try{await requireAdmin(req);const {business_id}=
  else{props={customerName:S('string','Müşterinin adı'),statedPhone:S('string','Müşterinin söylediği telefon numarası')};for(const f of alanlar)props[f.k]=S('string',f.l);}
  const an=await j('/assistant/'+b.vapi_assistant_id,{method:'PATCH',body:JSON.stringify({analysisPlan:{...(as.d.analysisPlan||{}),structuredDataPlan:{enabled:true,schema:{type:'object',properties:props}}}})});
  const yedek=an.ok?'açık':'açılamadı ('+an.status+')';
+ // Telefon numarası: istek moduna alınır (paket sınırı, sadık müşteri ve durdurma için her aramada bize sorulur).
+ if(b.vapi_phone_id){const t=await istekModunaAl(b,new URL(req.url).origin);sonuc.push(t.ok?'telefon numarası paket kurallarına bağlandı'+(e164(b.settings?.kota_yonlendirme||b.phone_number)?'':' (UYARI: işletmenin telefonu girilmemiş, hat dolunca aktarılacak numara yok)'):'telefon numarası ayarlanamadı: '+(t.error||t.reason));}
+ else sonuc.push('işletmede Vapi telefon numarası (vapi_phone_id) yok, numara bağlanınca bu butona tekrar bas');
  await adminSb.from('businesses').update({settings:{...(b.settings||{}),vapi_tool_ids:ids,save_order_tool_id:ids.save_order||null,find_location_tool_id:ids.find_location||null}}).eq('id',b.id);
  const fiyatUyari=siparis&&b.plan!=='all'?' Not: bu işletme Çağrı paketinde, fiyat listesi sadece All in one pakette çalışır.':'';
  return NextResponse.json({ok:true,sonuc,yedekAnaliz:yedek,uyari:fiyatUyari});}catch(e){return NextResponse.json({error:e.message},{status:e.message==='Yetkisiz'?401:400});}}

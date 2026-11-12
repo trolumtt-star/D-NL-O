@@ -11,14 +11,19 @@ const metin=()=>`# Dinlio AI
 - Restoranlarda masa rezervasyonu yapar, otel ve emlak ofislerinde talep toplar.
 - Menü ve hizmet fiyatlarını işletmenin fiyat listesinden söyler.
 - Müşteri tam adres veremezse tarifini ("BİM'in yanındaki apartman") haritada bulur.
-- Daha önce arayan müşteriyi adıyla karşılar.
+- Daha önce arayan müşteriyi adıyla karşılar (Standart ve üstü).
 - Çalışanlara yalnızca randevu ekranı açılabilir; işletme sahibine telefon bildirimi ve her akşam günün özeti gider.
 
 ## Kimler için
 Telefonla sipariş veya randevu alan her işletme: restoran, dönerci, pideci, kafe, su ve tüp bayisi, kuaför, berber, güzellik merkezi, diş kliniği, doktor muayenehanesi, veteriner, oto servis, lastikçi, spor salonu, pilates, otel, pansiyon, emlak ofisi, toptancı.
 
 ## Fiyat
-Aylık paketler ABD doları ile fiyatlanır, Türk lirası karşılığı güncel kurla gösterilir. Başlangıç paketi 100 dakika, Standart 300 dakika, Büyük 600 dakika, Pro 1500 dakika. 1 hafta ücretsiz deneme vardır. Güncel fiyatlar: ${SITE}/
+Aylık paketler ABD doları ile fiyatlanır, Türk lirası karşılığı güncel kurla gösterilir. 1 hafta ücretsiz deneme vardır.
+- Başlangıç: 100 dakika, aynı anda 1 arama. Sipariş, randevu, panel, bildirim, akşam özeti.
+- Standart: 300 dakika, aynı anda 2 arama, 3 çalışan hesabı, sadık müşteriyi adıyla karşılama, ses kaydı dinleme.
+- Büyük: 600 dakika, aynı anda 3 arama, 10 çalışan hesabı.
+- Pro: 1500 dakika, aynı anda 5 arama, 20 çalışan hesabı.
+Hat dolarsa veya dakika biterse aramalar işletmenin kendi telefonuna yönlenir, müşteri kaybolmaz. Güncel fiyatlar: ${SITE}/
 
 ## Bağlantılar
 - Ana sayfa ve fiyatlar: ${SITE}/

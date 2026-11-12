@@ -1,15 +1,16 @@
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';
+import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {e164} from '@/lib/vapi';import {paketOf} from '@/lib/paket';
+// Bu numarada şu an süren (bu arama hariç) kaç arama var? Vapi'ye sorulur; cevap gelmezse sınır uygulanmaz.
+const AKTIF=new Set(['queued','ringing','in-progress']);
+async function aktifSayisi(pid,buId){const key=process.env.VAPI_API_KEY;if(!key)return 0;
+ try{const q=new URLSearchParams({phoneNumberId:pid,limit:'50',createdAtGt:new Date(Date.now()-45*60e3).toISOString()});
+  const r=await fetch('https://api.vapi.ai/call?'+q,{headers:{authorization:'Bearer '+key},signal:AbortSignal.timeout(2500)});if(!r.ok)return 0;
+  const l=await r.json();return (Array.isArray(l)?l:l.results||[]).filter(c=>c.id!==buId&&AKTIF.has(c.status)).length;}catch{return 0;}}
 export const maxDuration=10; // Vapi bu uca 7.5 saniye içinde cevap bekliyor
-// Vapi, assistantId boş bırakılmış bir numaraya çağrı geldiğinde bu adrese
-// {message:{type:'assistant-request', call:{phoneNumberId,...}}} gönderir.
-// Biz de işletme kota yüzünden durduysa çağrıyı işletmenin gerçek telefonuna
-// yönlendiriyoruz (AI devreye girmeden); değilse normal asistanı geri veriyoruz
-// (güvenlik ağı - normalde assistantId zaten dolu olduğu için buraya hiç düşmemeli).
-const e164=s=>{let d=String(s||'').replace(/\D/g,'');if(!d)return null;
- if(d.length===10&&d[0]==='5')d='90'+d;
- else if(d.length===11&&d[0]==='0')d='90'+d.slice(1);
- else if(!d.startsWith('90')&&d.length>=10)d='90'+d.slice(-10);
- return '+'+d;};
+// Numaralar "istek modunda" (lib/vapi.js): her aramada Vapi bu adrese
+// {message:{type:'assistant-request', call:{phoneNumberId,...}}} gönderir. Sırayla:
+// 1) işletme durduysa arama işletmenin gerçek telefonuna aktarılır,
+// 2) paketin eş zamanlı arama sınırı doluysa yine işletmeye aktarılır,
+// 3) değilse asistan verilir; paket izin veriyorsa sadık müşteri adıyla karşılanır.
 export async function POST(req){
  try{
   const sec=process.env.VAPI_SECRET,hs=req.headers.get('x-vapi-secret')||(req.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');
@@ -18,7 +19,7 @@ export async function POST(req){
   if(m.type&&m.type!=='assistant-request')return NextResponse.json({});
   const pid=m.call?.phoneNumberId||m.phoneNumber?.id||null;
   if(!pid)return NextResponse.json({error:'phoneNumberId gelmedi'});
-  const {data:biz}=await adminSb.from('businesses').select('id,status,vapi_assistant_id,phone_number,name,settings').eq('vapi_phone_id',pid).maybeSingle();
+  const {data:biz}=await adminSb.from('businesses').select('id,status,vapi_assistant_id,phone_number,name,settings,quota_minutes_total').eq('vapi_phone_id',pid).maybeSingle();
   if(!biz)return NextResponse.json({error:'İşletme bulunamadı (vapi_phone_id eşleşmiyor)'});
   if(biz.status==='suspended'){
    const num=e164(biz.settings?.kota_yonlendirme||biz.phone_number);
@@ -26,6 +27,12 @@ export async function POST(req){
    return NextResponse.json({destination:{type:'number',number:num,message:`Bu işletmenin otomatik asistan süresi bu ay için doldu, sizi ${biz.name||'işletmeye'} doğrudan bağlıyorum.`}});
   }
   if(biz.vapi_assistant_id){
+   const pk=paketOf(biz),num=e164(biz.settings?.kota_yonlendirme||biz.phone_number);
+   // EŞ ZAMANLI SINIR: paketin hat sayısı doluysa arama işletmenin kendi telefonuna aktarılır.
+   if(num){const n=await aktifSayisi(pid,m.call?.id);
+    if(n>=pk.eszamanli){await adminSb.from('webhook_events').insert({type:'hat_dolu',business_id:biz.id,vapi_call_id:m.call?.id||null,payload:{aktif:n,sinir:pk.eszamanli,paket:pk.ad}});
+     return NextResponse.json({destination:{type:'number',number:num,message:'Şu an tüm hatlarımız dolu, sizi doğrudan işletmeye bağlıyorum.'}});}}
+   if(!pk.sadik)return NextResponse.json({assistantId:biz.vapi_assistant_id});
    // SADIK MÜŞTERİ: aynı numara daha önce aradıysa ve adını biliyorsak açılışı kişiselleştir.
    try{
     const num=String(m.call?.customer?.number||m.customer?.number||'').replace(/\D/g,'').slice(-10);

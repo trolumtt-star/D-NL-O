@@ -1,11 +1,11 @@
 // Çalışan hesapları: işletme sahibi açar/siler, şifre yeniler. Çalışan sadece randevu ekranını görür.
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {requireOwner} from '@/lib/owner';
+import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {requireOwner} from '@/lib/owner';import {paketOf,enAzPaket} from '@/lib/paket';
 export const dynamic='force-dynamic';
 const hata=(m,s=400)=>NextResponse.json({error:m},{status:s});
 const U=/^[a-z0-9._-]{3,30}$/;
 export async function GET(req){try{const b=await requireOwner(req);
  const {data}=await adminSb.from('calisanlar').select('id,ad,username,resource_id,created_at').eq('business_id',b.id).order('created_at');
- return NextResponse.json({liste:data||[]});}catch(e){return hata(e.message,401);}}
+ const pk=paketOf(b);return NextResponse.json({liste:data||[],sinir:pk.calisan,paket:pk.ad,enAz:enAzPaket('calisan')});}catch(e){return hata(e.message,401);}}
 export async function POST(req){try{const b=await requireOwner(req);const x=await req.json();
  if(x.islem==='ekle'){
   const ad=String(x.ad||'').trim().slice(0,60),u=String(x.username||'').trim().toLowerCase(),sifre=String(x.sifre||'');
@@ -13,7 +13,9 @@ export async function POST(req){try{const b=await requireOwner(req);const x=awai
   if(!U.test(u))return hata('Kullanıcı adı 3-30 karakter olmalı; sadece küçük harf, rakam, nokta, tire.');
   if(sifre.length<8)return hata('Şifre en az 8 karakter olmalı.');
   const {count}=await adminSb.from('calisanlar').select('id',{count:'exact',head:true}).eq('business_id',b.id);
-  if(count>=20)return hata('En fazla 20 çalışan hesabı açabilirsiniz.');
+  const pk=paketOf(b);
+  if(!pk.calisan)return hata(`Çalışan hesapları ${enAzPaket('calisan')} paketten itibaren açılır. Paket yükseltmek için bize WhatsApp'tan yazın.`);
+  if(count>=pk.calisan)return hata(`${pk.ad} pakette en fazla ${pk.calisan} çalışan hesabı açılabilir. Daha fazlası için üst pakete geçebilirsiniz.`);
   const {data:nu,error:e1}=await adminSb.auth.admin.createUser({email:u+'@isletme.panel',password:sifre,email_confirm:true,user_metadata:{rol:'calisan',isletme:b.id}});
   if(e1)return hata(/already/i.test(e1.message)?'Bu kullanıcı adı alınmış, başka bir tane deneyin.':e1.message);
   let rid=x.resource_id&&/^[0-9a-f-]{36}$/.test(x.resource_id)?x.resource_id:null;
