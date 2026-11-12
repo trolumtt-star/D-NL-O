@@ -17,7 +17,7 @@ export default function CalisanPanel({sb,bilgi}){
  const durum=async(id,st)=>{if(st==='cancelled'&&!confirm('Randevu iptal edilsin mi?'))return;const {error}=await sb.rpc('calisan_randevu_durum',{p_id:id,p_status:st});setMsg(error?'Kaydedilemedi: '+error.message:'');yukle();};
  return <div className="wrap" style={{maxWidth:860,margin:'0 auto',padding:'20px 14px'}}>
   <div className="row" style={{marginBottom:14}}><div><h1 style={{margin:0,fontSize:'1.3rem'}}>{bilgi.isletme}</h1><p className="mut" style={{margin:'2px 0 0'}}>Merhaba {bilgi.ad} · randevu ekranı{bilgi.resource_name?' · '+bilgi.resource_name:''}</p></div>
-   <button className="g" onClick={()=>sb.auth.signOut().then(()=>location.replace('/login'))}>Çıkış</button></div>
+   <button className="g" onClick={()=>sb.auth.signOut().then(()=>location.replace('/panel/giris'))}>Çıkış</button></div>
   <div className="row" style={{justifyContent:'flex-start',gap:8,flexWrap:'wrap',marginBottom:10}}>
    <div className="chips" style={{margin:0}}>{[['today','Bugün'],['tomorrow','Yarın'],['up','Yaklaşan']].map(([k,x])=><button key={k} className={'chp'+(af===k?' on':'')} onClick={()=>setAf(k)}>{x}</button>)}</div>
    {bilgi.resource_id&&<label style={{display:'flex',gap:6,alignItems:'center',margin:0,fontSize:'.9rem'}}><input type="checkbox" checked={benim} onChange={e=>setBenim(e.target.checked)} style={{width:'auto',margin:0}}/> Sadece benim randevularım</label>}

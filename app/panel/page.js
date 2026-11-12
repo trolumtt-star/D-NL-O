@@ -14,7 +14,7 @@ export default function Panel(){
  const loadK=async()=>{const {data}=await sb.rpc('kilitli_cagrilar');const l=data||[];if(kilitSay.current>=0&&l.length>kilitSay.current)push('🔒 Yeni sipariş geldi. Görmek için aşım ücretini ödeyin.');kilitSay.current=l.length;setKilit(l);};
  const [cal,setCal]=useState(null);
  const loadB=async()=>{const {data}=await sb.from('businesses').select('*').limit(1);if(!data?.[0]){const {data:ci}=await sb.rpc('calisan_bilgi');if(ci)setCal(ci);}setB(data?.[0]||false);loadK();if(data?.[0])setTc(v=>v===''?String(data[0].table_count||0):v);};
- useEffect(()=>{if(u===null)location.replace('/login');if(!u)return;loadB();try{setSnd(localStorage.getItem('snd')!=='0');}catch{}},[u]);
+ useEffect(()=>{if(u===null)location.replace('/panel/giris');if(!u)return;loadB();try{setSnd(localStorage.getItem('snd')!=='0');}catch{}},[u]);
  useEffect(()=>{if(!b?.id)return;const id=b.id;
   const lr=async()=>{const {data}=await sb.from('reservations').select('*').eq('business_id',id).order('reservation_date',{ascending:false}).order('reservation_time',{ascending:false}).limit(500);setR(data||[]);};
   const lc=async()=>{const {data}=await sb.from('calls').select('*').eq('business_id',id).order('created_at',{ascending:false}).limit(500);setC(data||[]);};
