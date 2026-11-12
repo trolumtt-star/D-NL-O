@@ -31,6 +31,14 @@ Kullanıcıyla konuşulup "şimdi değil, sonra" denen özellikler. Paket kademe
 - [ ] Bekleme listesi (dolu randevuda, iptal olunca sıradakine haber)
 - [ ] Asistanın ses tonu seçimi (kadın/erkek, resmi/samimi)
 
+## Alt marka: komisyonsuz sipariş uygulaması (isim seçilecek: Doyur / Kapıda / Sıcak / Paketle, TÜRKPATENT kontrolü)
+- Dinlio kullanan restoranlar otomatik listelenir (menü/fiyat zaten sistemde). Adında "Dinlio" geçmez.
+- Müşteri giriş kapısı: takip linki sayfasında "Komisyonsuz, işletmenin kendi fiyatına sipariş ver" çağrısı.
+- Fiyat = işletmenin kendi fiyatı (telefonla aynı), uygulama komisyonu yok. Reklamda rakip adı geçmesin (karşılaştırmalı reklam riski).
+- Ödeme: önce sadece kapıda (nakit / kuryenin POS'u); online kart şirket sonrası, restoranın kendi iyzico/PayTR hesabına.
+- Siparişler Dinlio Go kuryelerine düşer. Açılış zamanı: Yalova'da 15-20 restoran Dinlio'dayken.
+- Gelir sonra: öne çıkarma ücreti / küçük komisyon / Dinlio paketine dahil.
+
 ## Kararlar
 - Web sitesi "Hemen ara" butonu: kullanıcı gereksiz buldu, fiyat kartından çıkarılabilir.
 - Kendi altyapı (Pipecat/LiveKit): Vapi faturası ayda ~1000-1500 $'ı geçince.
