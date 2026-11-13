@@ -1,0 +1,153 @@
+/* DİNLİO GO + müşteri takip sayfası. Sitenin neon kırmızı / siyah diliyle aynı. */
+.go{max-width:520px;margin:0 auto;padding:max(16px,env(safe-area-inset-top)) 16px calc(120px + env(safe-area-inset-bottom))}
+.go-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px;animation:goUp .5s both}
+.go-logo{display:flex;gap:10px;align-items:center;font-family:var(--disp);font-weight:800;font-size:1.22rem;letter-spacing:-.045em}
+.go-logo b{color:var(--red);text-shadow:var(--neon)}
+.go-mark{width:40px;height:40px;border-radius:13px;background:linear-gradient(145deg,#ff2b48,#8a0016);display:grid;place-items:center;color:#fff;box-shadow:0 0 22px rgba(255,31,61,.55),inset 0 1px 0 rgba(255,255,255,.25)}
+.go-mark svg rect{fill:#fff}
+.go-pill{display:inline-flex;gap:7px;align-items:center;padding:6px 11px;border-radius:999px;border:1px solid var(--rule);background:var(--soft);font-size:.78rem;color:var(--ink2);white-space:nowrap;max-width:52%;overflow:hidden;text-overflow:ellipsis}
+.go-dot{flex:none;width:8px;height:8px;border-radius:50%;background:#2ee66b;animation:goPing 1.8s infinite}
+.go-dot.k{background:var(--red);animation-name:goPingR}
+@keyframes goPing{0%{box-shadow:0 0 0 0 rgba(46,230,107,.7)}70%,100%{box-shadow:0 0 0 10px rgba(46,230,107,0)}}
+@keyframes goPingR{0%{box-shadow:0 0 0 0 rgba(255,31,61,.7)}70%,100%{box-shadow:0 0 0 10px rgba(255,31,61,0)}}
+@keyframes goUp{from{opacity:0;transform:translateY(16px) scale(.985)}}
+@keyframes goFade{from{opacity:0}}
+@keyframes goShine{0%{background-position:160% 0}55%,100%{background-position:-120% 0}}
+
+/* kazanç kartı */
+.go-hero{position:relative;overflow:hidden;border-radius:26px;padding:20px;display:flex;align-items:center;gap:16px;border:1px solid rgba(255,31,61,.38);
+ background:radial-gradient(120% 140% at 100% 0%,rgba(255,31,61,.3),transparent 55%),linear-gradient(160deg,#17080c,#0b0b0d);box-shadow:0 24px 60px -32px rgba(255,31,61,.75);animation:goUp .6s .05s both}
+.go-hero::after,.go .go-btn::after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.09) 45%,transparent 60%);background-size:250% 100%;animation:goShine 4.8s infinite}
+.go-lbl{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:700}
+.go-big{font-family:var(--disp);font-size:clamp(2rem,9vw,2.5rem);font-weight:800;letter-spacing:-.055em;line-height:1.05;margin:4px 0 2px;text-shadow:var(--neonw);font-variant-numeric:tabular-nums}
+.go-sub{color:var(--ink2);font-size:.88rem}
+.go-ring{position:relative;flex:none;width:104px;height:104px;margin-left:auto;display:grid;place-items:center}
+.go-ring svg{transform:rotate(-90deg)}
+.go-ring .b{stroke:rgba(255,255,255,.08)}
+.go-ring .v{stroke:var(--red);filter:drop-shadow(0 0 6px rgba(255,31,61,.85));transition:stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1)}
+.go-ring div{position:absolute;inset:0;display:grid;place-items:center;text-align:center;line-height:1.1}
+.go-ring b{font-family:var(--disp);font-size:1.05rem}
+.go-ring select{all:unset;cursor:pointer;font-size:.66rem;color:var(--mute);text-align:center}
+.go-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.go-mini>div{border-radius:16px;padding:12px;background:var(--soft);border:1px solid var(--rule);animation:goUp .5s both}
+.go-mini>div:nth-child(2){animation-delay:.08s}.go-mini>div:nth-child(3){animation-delay:.16s}
+.go-mini b{display:block;font-family:var(--disp);font-size:1.1rem;letter-spacing:-.04em;margin-top:2px;font-variant-numeric:tabular-nums}
+
+/* başlıklar, kartlar */
+.go-sec{display:flex;justify-content:space-between;align-items:center;margin:24px 2px 12px;font-family:var(--disp);font-size:.98rem;letter-spacing:-.03em}
+.go-badge{background:var(--red);color:#fff;border-radius:999px;padding:2px 10px;font-size:.74rem;box-shadow:var(--neon);font-family:var(--font);font-weight:800}
+.go-card{position:relative;border-radius:22px;padding:16px;margin-bottom:12px;background:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.012));border:1px solid var(--rule);animation:goUp .5s both;animation-delay:calc(var(--i,0)*70ms)}
+.go-card.yeni{border-color:var(--red);animation:goUp .5s both,goGlow 1.1s ease-in-out .5s 5}
+@keyframes goGlow{50%{box-shadow:0 0 0 1px var(--red),0 0 32px rgba(255,31,61,.6)}}
+.go-new{position:absolute;top:-10px;left:16px;background:var(--red);color:#fff;font-size:.66rem;font-weight:800;letter-spacing:.12em;padding:3px 10px;border-radius:999px;box-shadow:var(--neon)}
+.go-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.go-name{font-family:var(--disp);font-size:1.02rem;letter-spacing:-.035em}
+.go-price{font-family:var(--disp);font-size:1.55rem;font-weight:800;letter-spacing:-.05em;color:#fff;text-shadow:var(--neon);white-space:nowrap}
+.go-meta{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 14px}
+.go-chip{font-size:.77rem;padding:5px 10px;border-radius:999px;background:var(--soft);border:1px solid var(--rule);color:var(--ink2)}
+.go-adres{margin-top:10px;padding:12px;border-radius:14px;background:rgba(0,0,0,.35);border:1px solid var(--rule2)}
+.go-adres p+p{margin-top:4px}
+.go-mut{color:var(--mute);font-size:.86rem}
+.go-err{border-color:rgba(255,31,61,.6);color:var(--redInk)}
+
+/* düğmeler */
+.go .go-btn{position:relative;overflow:hidden;width:100%;height:56px;border-radius:16px;font-size:1.02rem;font-weight:800;padding:0 16px;border:0;
+ background:linear-gradient(135deg,#ff2b48,#cc0022);box-shadow:0 12px 30px -12px rgba(255,31,61,.9);transition:transform .12s,filter .2s}
+.go .go-btn:active{transform:scale(.98)}
+.go .go-btn:disabled{filter:grayscale(.4);opacity:.6}
+.go .go-btn2{width:100%;min-height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 14px;background:var(--soft);border:1px solid var(--rule);
+ color:#fff;font-weight:700;font-size:.95rem;text-decoration:none;box-shadow:none;transition:background .2s,border-color .2s,transform .12s}
+.go .go-btn2:active{transform:scale(.98);background:rgba(255,255,255,.08)}
+.go .go-btn2.w{background:#fff;color:#000;border-color:#fff}
+.go .go-btn2.s{background:transparent;color:var(--mute);border-color:transparent;min-height:40px;font-size:.85rem}
+.go-grid{display:grid;gap:8px;margin-top:14px}
+.go-grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* aktif teslimat */
+.go-aktif{border-color:rgba(255,31,61,.55);background:radial-gradient(140% 100% at 100% 0%,rgba(255,31,61,.16),transparent 60%),linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.01))}
+.go-adim{position:relative;display:grid;grid-template-columns:repeat(3,1fr);margin:14px 0 4px;text-align:center;font-size:.72rem;color:var(--mute);font-weight:700}
+.go-adim::before,.go-adim i{content:'';position:absolute;top:10px;left:16.6%;height:3px;border-radius:3px;background:rgba(255,255,255,.1)}
+.go-adim::before{right:16.6%}
+.go-adim i{background:linear-gradient(90deg,var(--red),#ff8a9a);box-shadow:0 0 10px rgba(255,31,61,.8);width:calc(var(--p)*66.8%);transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.go-adim span{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px}
+.go-adim span::before{content:'';width:20px;height:20px;border-radius:50%;background:#1a1a1d;border:2px solid rgba(255,255,255,.18);transition:all .4s}
+.go-adim span.ok{color:#fff}
+.go-adim span.ok::before{background:var(--red);border-color:var(--red);box-shadow:0 0 12px rgba(255,31,61,.8)}
+.go-adim span.su::before{animation:goPingR 1.6s infinite}
+
+/* kaydırarak teslim */
+.go-kaydir{position:relative;height:62px;border-radius:18px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;
+ background:linear-gradient(135deg,rgba(46,230,107,.2),rgba(46,230,107,.06));border:1px solid rgba(46,230,107,.5)}
+.go-kaydir .iz{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(46,230,107,.15),rgba(46,230,107,.4))}
+.go-kaydir .yz{position:absolute;inset:0;display:grid;place-items:center;padding-left:50px;font-weight:800;color:#c4ffd6;font-size:.98rem;
+ background:linear-gradient(90deg,#7dffa6 0%,#fff 20%,#7dffa6 40%) 0 0/250% 100% text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:goShine 2.6s linear infinite}
+.go-kaydir .top{position:absolute;top:5px;left:5px;width:52px;height:52px;border-radius:14px;background:#2ee66b;color:#04140a;display:grid;place-items:center;font-size:1.35rem;font-weight:900;
+ box-shadow:0 0 22px rgba(46,230,107,.65);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.go-kaydir.surukle .top{transition:none}
+
+/* boş durum */
+.go-bos{text-align:center;padding:26px 16px 22px;border-radius:22px;border:1px dashed var(--rule);background:var(--soft);animation:goUp .5s both}
+.go-radar{position:relative;width:128px;height:128px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;color:#fff;
+ background:radial-gradient(circle,rgba(255,31,61,.18),transparent 65%)}
+.go-radar::before,.go-radar::after{content:'';position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(255,31,61,.55);animation:goDalga 2.6s cubic-bezier(.2,.6,.3,1) infinite}
+.go-radar::after{animation-delay:1.3s}
+@keyframes goDalga{from{transform:scale(.35);opacity:1}to{transform:scale(1.15);opacity:0}}
+.go-radar svg{animation:goSalla 1.1s ease-in-out infinite;filter:drop-shadow(0 0 10px rgba(255,31,61,.5))}
+@keyframes goSalla{50%{transform:translateY(-3px) rotate(-2deg)}}
+
+/* bildirim çağrısı */
+.go-cta{display:flex;gap:14px;align-items:center;border-color:rgba(255,31,61,.4)}
+.go-zil{flex:none;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:1.35rem;background:var(--redSoft);border:1px solid rgba(255,31,61,.4);animation:goZil 2.4s ease-in-out infinite;transform-origin:50% 10%}
+@keyframes goZil{0%,60%,100%{transform:rotate(0)}65%{transform:rotate(14deg)}72%{transform:rotate(-12deg)}79%{transform:rotate(8deg)}86%{transform:rotate(-4deg)}}
+
+/* bildirim baloncuğu ve kutlama */
+.go-toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;max-width:calc(100% - 32px);padding:12px 16px;border-radius:16px;
+ background:rgba(20,20,23,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--rule);font-weight:700;font-size:.92rem;box-shadow:0 18px 40px -16px #000;animation:goToast .35s cubic-bezier(.2,.9,.3,1.3) both}
+.go-toast.h{border-color:rgba(255,31,61,.6);color:var(--redInk)}
+@keyframes goToast{from{opacity:0;transform:translate(-50%,20px) scale(.95)}}
+.go-kutla{position:fixed;inset:0;z-index:70;display:grid;place-items:center;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:goFade .25s both}
+.go-kutla>div{position:relative;text-align:center}
+.go-tik{width:96px;height:96px;margin:0 auto;border-radius:50%;display:grid;place-items:center;background:#2ee66b;color:#04140a;font-size:2.8rem;font-weight:900;
+ box-shadow:0 0 0 12px rgba(46,230,107,.15),0 0 60px rgba(46,230,107,.6);animation:goPop .6s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes goPop{from{transform:scale(.2);opacity:0}}
+.go-kutla h2{font-family:var(--disp);font-size:2.4rem;margin-top:18px;letter-spacing:-.05em;text-shadow:var(--neonw);animation:goUp .5s .2s both}
+.go-kutla p{color:var(--ink2);animation:goUp .5s .3s both}
+.go-konf{position:absolute;left:50%;top:48px;width:0;height:0}
+.go-konf i{position:absolute;width:8px;height:14px;border-radius:2px;background:var(--c);animation:goKonf 1.5s cubic-bezier(.15,.7,.3,1) forwards}
+@keyframes goKonf{from{transform:translate(0,0) rotate(0);opacity:1}to{transform:translate(var(--x),calc(var(--y) + 120px)) rotate(var(--r));opacity:0}}
+
+/* katılma */
+.go-giris{text-align:center;padding:26px 18px}
+.go-giris h1{font-size:1.6rem;margin:14px 0 6px}
+.go .go-inp{width:100%;height:54px;border-radius:14px;border:1px solid var(--rule);background:rgba(0,0,0,.4);color:var(--ink);padding:0 16px;font-size:1rem;margin-bottom:10px;transition:border-color .2s,box-shadow .2s}
+.go .go-inp:focus{outline:0;border-color:var(--red);box-shadow:0 0 0 3px var(--redSoft)}
+.go-adimlar{display:grid;gap:10px;margin-top:18px;text-align:left}
+.go-adimlar div{display:flex;gap:12px;align-items:center;padding:12px;border-radius:14px;background:var(--soft);border:1px solid var(--rule);animation:goUp .5s both}
+.go-adimlar b{flex:none;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:var(--redSoft);color:var(--red);font-family:var(--disp)}
+
+/* MÜŞTERİ TAKİP */
+.tk-hero{position:relative;overflow:hidden;text-align:center;border-radius:26px;padding:26px 18px 22px;border:1px solid var(--rule);
+ background:radial-gradient(120% 120% at 50% 0%,rgba(255,31,61,.22),transparent 60%),linear-gradient(170deg,#140a0c,#0b0b0d);animation:goUp .6s both}
+.tk-hero.yolda{border-color:rgba(255,31,61,.5);box-shadow:0 24px 60px -30px rgba(255,31,61,.8)}
+.tk-hero.teslim{border-color:rgba(46,230,107,.5);background:radial-gradient(120% 120% at 50% 0%,rgba(46,230,107,.2),transparent 60%),linear-gradient(170deg,#08120c,#0b0b0d)}
+.tk-hero h1{font-size:clamp(1.45rem,6vw,1.9rem);margin-top:12px}
+.tk-eta{display:inline-flex;align-items:baseline;gap:6px;margin-top:12px;padding:8px 16px;border-radius:999px;background:rgba(0,0,0,.4);border:1px solid var(--rule)}
+.tk-eta b{font-family:var(--disp);font-size:1.6rem;letter-spacing:-.05em;color:#fff;text-shadow:var(--neon)}
+.tk-yol{position:relative;height:74px;margin:18px 4px 6px}
+.tk-yol .serit{position:absolute;left:0;right:0;bottom:16px;height:4px;border-radius:4px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.18) 0 14px,transparent 14px 26px)}
+.tk-yol.akar .serit{animation:tkSerit .6s linear infinite}
+@keyframes tkSerit{to{background-position:-26px 0}}
+.tk-yol .dolu{position:absolute;left:0;bottom:16px;height:4px;border-radius:4px;background:linear-gradient(90deg,var(--red),#ff8a9a);box-shadow:0 0 12px rgba(255,31,61,.8);transition:width 1.4s cubic-bezier(.2,.8,.2,1)}
+.tk-yol .motor{position:absolute;bottom:20px;transform:translateX(-50%);color:#fff;transition:left 1.4s cubic-bezier(.2,.8,.2,1)}
+.tk-yol.akar .motor svg{animation:goSalla .5s ease-in-out infinite}
+.tk-yol .ev{position:absolute;right:-4px;bottom:22px;font-size:1.4rem}
+.tk-et{display:grid;grid-template-columns:repeat(3,1fr);font-size:.74rem;font-weight:700;color:var(--mute)}
+.tk-et span:nth-child(2){text-align:center}.tk-et span:nth-child(3){text-align:right}
+.tk-et .ok{color:#fff}
+.tk-harita{margin-top:12px;border-radius:22px;overflow:hidden;border:1px solid rgba(255,31,61,.35);box-shadow:0 20px 50px -30px rgba(255,31,61,.7);animation:goUp .6s .1s both}
+.tk-harita iframe{display:block;width:100%;height:330px;border:0;filter:invert(.92) hue-rotate(180deg) saturate(.7) contrast(.95)}
+.tk-harita p{padding:10px 14px;color:var(--mute);font-size:.8rem;background:var(--surface)}
+.tk-alt{color:var(--mute);font-size:.8rem;text-align:center;margin-top:18px}
+.tk-alt b{color:var(--ink)}
+
+@media (prefers-reduced-motion:reduce){.go *,.go *::before,.go *::after{animation:none!important;transition:none!important}}
