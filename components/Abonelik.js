@@ -33,7 +33,7 @@ function PaketAl({tok,b,kapat,ilk}){
    :adim===2?<><p className="mut" style={{margin:'8px 0'}}>Fatura ve ödeme sayfası için bilgilerin:</p>
     <div className="frm">{[['ad','Ad'],['soyad','Soyad'],['eposta','E-posta'],['tel','Cep telefonu']].map(([k,l])=><label key={k}>{l}<input value={bi[k]} onChange={e=>setBi({...bi,[k]:e.target.value})} inputMode={k==='tel'?'tel':undefined}/></label>)}</div>
     <div className="row" style={{gap:8,marginTop:14}}><button className="g" onClick={()=>setAdim(1)}>Geri</button><button style={{flex:1}} disabled={!ok||busy} onClick={()=>ode('shopier')}>{busy?'Hazırlanıyor…':`Kartla öde${top?' · '+tl(top):''}`}</button></div>
-    <p style={{textAlign:'center',marginTop:8}}><a className="lnk" onClick={()=>ok&&!busy&&ode('iban')}>Havale / EFT ile ödemek istiyorum</a></p></>
+    <p className="mut" style={{textAlign:'center',marginTop:8,fontSize:'.85rem'}}>🔒 Kredi/banka kartıyla güvenli ödeme. Ödeme onaylanınca paketin anında açılır.</p></>
    :adim===3?<div style={{textAlign:'center',padding:'10px 0'}}><p>Ödeme sayfası <b>yeni sekmede</b> açıldı. Ödemeyi tamamlayınca bu pencere kendiliğinden algılar.</p>
     {link&&<a className="lb" href={link} target="_blank" rel="noopener" style={{display:'inline-block',marginTop:12}}>Ödeme sayfasını aç</a>}<p className="mut" style={{marginTop:12}}>⏳ Ödeme bekleniyor…</p></div>
    :iban&&<div><p style={{marginTop:8}}>Aşağıdaki hesaba <b>{tl(iban.toplam_tl)}</b> gönderin, açıklamaya <b style={{fontFamily:'monospace'}}>{iban.kod}</b> yazın.</p>
@@ -46,9 +46,14 @@ export default function Abonelik({b,tok}){
  const kartS={border:'1px solid rgba(255,31,61,.45)',background:'radial-gradient(120% 140% at 100% 0%,rgba(255,31,61,.18),transparent 60%)'};
  return <>
   {!b.vapi_assistant_id&&<div className="card" style={kartS}><h2>Asistanını kur ✨</h2><p className="mut" style={{margin:'6px 0 12px'}}>İşini birkaç cümleyle anlat, yapay zekâ sorular sorarak asistanını hazırlasın. 3 dakika sürer.</p><a className="lb" href="/kurulum">Kuruluma başla</a></div>}
-  {dn&&!ab&&<div className="card" style={kartS}><div className="row" style={{flexWrap:'wrap',gap:10}}><div><h2>{kalanGun(dn.bitis)>0?`Ücretsiz deneme: ${kalanGun(dn.bitis)} gün kaldı`:'Ücretsiz deneme bitti'}</h2>
-   <p className="mut">Deneme dakikası: {Math.max(0,b.quota_minutes_total-Math.ceil((b.quota_seconds_used||0)/60))} / {b.quota_minutes_total} dk. Deneme bitince paket seçerek kesintisiz devam edebilirsin.</p></div><button onClick={()=>setAc(true)}>Paket seç</button></div></div>}
+  {dn&&!ab&&!s.kurulum_onay&&<div className="card" style={{border:'1px solid rgba(255,196,0,.45)',background:'radial-gradient(120% 140% at 100% 0%,rgba(255,196,0,.14),transparent 60%)'}}><h2>⏳ Ücretsiz hesabınızın kurulumu 24 saat içinde tamamlanacaktır</h2>
+   <p className="mut" style={{marginTop:6}}>Ekibimiz hesabını kontrol edip asistanını hazır hâle getiriyor. Kurulum bitince sana bildirim gelecek. Bu arada asistanına işletmeni anlatabilir ve tarayıcıdan konuşarak deneyebilirsin.</p></div>}
+  {dn&&!ab&&(()=>{const kDk=Math.max(0,(b.quota_minutes_total||0)+(b.ek_dakika||0)-Math.ceil((b.quota_seconds_used||0)/60)),kG=kalanGun(dn.bitis),bitti=kG<=0||kDk<=0||b.status==='suspended';
+   return <div className="card" style={bitti?{border:'1px solid rgba(255,31,61,.8)',background:'radial-gradient(120% 140% at 100% 0%,rgba(255,31,61,.3),transparent 60%)',boxShadow:'0 0 40px -10px rgba(255,31,61,.6)'}:kartS}><div className="row" style={{flexWrap:'wrap',gap:10}}><div>
+    <h2>{bitti?'Ücretsiz hakkın bitti':`Ücretsiz deneme: ${kG} gün, ${kDk} dakika kaldı`}</h2>
+    <p className="mut">{bitti?'Asistanın durdu, aramalar kendi telefonuna yönleniyor. Paketini seç, kartla öde; paketin anında açılsın ve asistanın kaldığı yerden devam etsin.':`Deneme dakikası: ${kDk} / ${b.quota_minutes_total} dk. Bittiğinde paket seçerek kesintisiz devam edebilirsin.`}</p></div>
+    <button onClick={()=>setAc(true)} style={bitti?{fontSize:'1.05rem',padding:'12px 22px'}:undefined}>⚡ Paket yükselt</button></div></div>;})()}
   {ab&&kalanGun(ab.bitis)<=5&&<div className="card" style={kartS}><div className="row" style={{flexWrap:'wrap',gap:10}}><div><h2>{kalanGun(ab.bitis)>0?`Paketin ${kalanGun(ab.bitis)} gün sonra bitiyor`:'Paketinin süresi doldu'}</h2><p className="mut">Asistanın kesintisiz çalışsın diye paketini yenile.</p></div><button onClick={()=>setAc(true)}>Yenile</button></div></div>}
-  {b.vapi_assistant_id&&<div className="card"><div className="row" style={{flexWrap:'wrap',gap:10}}><div><h2>Asistanını dene</h2><p className="mut">Telefonu beklemeden tarayıcıdan konuş{!b.vapi_phone_id?'. Telefon numaran paket alındıktan sonra bağlanır':''}.</p></div>
+  {b.vapi_assistant_id&&b.status!=='suspended'&&<div className="card"><div className="row" style={{flexWrap:'wrap',gap:10}}><div><h2>Asistanını dene</h2><p className="mut">Telefonu beklemeden tarayıcıdan konuş{!b.vapi_phone_id?'. Telefon numaran paket alındıktan sonra bağlanır':''}.</p></div>
    <div className="row" style={{gap:8}}><a className="lb g" href="/kurulum">Bilgileri güncelle</a><button onClick={()=>setDene(!dene)}>{dene?'Kapat':'🎙 Konuş'}</button></div></div>{dene&&<div style={{marginTop:6}}><SesliDeneme benim tok={tok} kisa/></div>}</div>}
   {ac&&<PaketAl tok={tok} b={b} ilk={dn} kapat={()=>setAc(false)}/>}</>;}

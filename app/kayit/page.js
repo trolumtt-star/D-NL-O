@@ -12,8 +12,8 @@ export default function Kayit(){
  return <div className="ks"><div className="ks-w">
   <div className="ks-top"><a className="ks-logo" href="/"><i>🎙</i><span>Dinlio <b>AI</b></span></a><a href="/login" style={{color:'var(--ink2)',fontSize:'.9rem'}}>Giriş yap</a></div>
   <h1>Asistanını <em>3 dakikada</em> kendin kur.</h1>
-  <p className="ks-alt">Hesabını aç, işini anlat; yapay zekâ senin için telefon asistanını hazırlasın. {s?.deneme?.gun||7} gün ücretsiz, kart bilgisi istemiyoruz.</p>
-  <div className="ks-pills"><span className="ks-pill">✓ <b>{s?.deneme?.gun||7} gün</b> ücretsiz</span><span className="ks-pill">✓ Kurulum ücreti yok</span>{pk&&<span className="ks-pill">Seçilen: <b>{pk.ad}{q.all?' All in one':''}{q.yil?' · yıllık':''}</b></span>}</div>
+  <p className="ks-alt">Hesabını aç, işini anlat; yapay zekâ senin için telefon asistanını hazırlasın. {s?.deneme?.gun??7} gün ücretsiz, kart bilgisi istemiyoruz.</p>
+  <div className="ks-pills"><span className="ks-pill">✓ <b>{s?.deneme?.gun??7} gün</b> ücretsiz</span><span className="ks-pill">✓ Kurulum ücreti yok</span>{pk&&<span className="ks-pill">Seçilen: <b>{pk.ad}{q.all?' All in one':''}{q.yil?' · yıllık':''}</b></span>}</div>
   <form className="ks-kart" style={{marginTop:14}} onSubmit={gonder}>
    <label>Adın soyadın</label><input value={f.ad} onChange={e=>setF({...f,ad:e.target.value})} autoComplete="name" required/>
    <label>İşletmenin adı</label><input value={f.isletme} onChange={e=>setF({...f,isletme:e.target.value})} placeholder="ör. Beyzade Kebap" required/>

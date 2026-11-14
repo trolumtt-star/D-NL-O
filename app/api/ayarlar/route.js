@@ -7,6 +7,7 @@ export async function POST(req){try{const b=await requireOwner(req);const x=awai
  if(x.islem==='yonlendirme'){const d=String(x.numara||'').replace(/\D/g,'');if(d&&!/^(90|0)?[2-5]\d{9}$/.test(d))return hata('Geçerli bir Türkiye telefon numarası girin (05xx… veya 0 alan kodu…).');
   if(d&&b.phone_number&&String(b.phone_number).replace(/\D/g,'').slice(-10)===d.slice(-10))return hata('Bu, aramaları asistana yönlendirdiğiniz numaranın aynısı. Döngü olmaması için başka bir numara girin (ör. ikinci cep telefonu).');
   s.kota_yonlendirme=d||null;}
+ else if(x.islem==='asim'&&x.acik&&b.settings?.deneme)return hata('Ücretsiz denemede aşım açılamaz. Dakikan bitince paketini seçebilirsin.');
  else if(x.islem==='asim'){const lim=Math.round(+x.limit_dk||0),tavan=Math.max(30,Math.min(3000,b.quota_minutes_total||100));if(x.acik&&!(lim>=10&&lim<=tavan))return hata(`Aşım limiti en fazla paketinizdeki dakika kadar (${tavan} dk) olabilir.`);
   s.asim={acik:!!x.acik,limit_dk:lim||100};
   // kota yüzünden durmuşsa ve aşım açılınca yer açıldıysa hemen geri aç
