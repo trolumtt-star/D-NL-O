@@ -2,7 +2,7 @@
 // Ayrıca yarınki randevulara hatırlatma (SMS/arama) gider.
 // Pazartesi akşamı Büyük/Pro işletmelere haftalık rapor da gider.
 // Günde bir kez çalışır (settings.son_ozet); tekrar çağrılsa da aynı gün ikinci özet gitmez.
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {bildir} from '@/lib/bildir';import {paketOf} from '@/lib/paket';import {hatirlatmalariGonder,yorumIste} from '@/lib/hatirlatma';import {abonelikKontrol} from '@/lib/abonelikKontrol';
+import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {bildir} from '@/lib/bildir';import {paketOf} from '@/lib/paket';import {hatirlatmalariGonder,yorumIste} from '@/lib/hatirlatma';import {abonelikKontrol} from '@/lib/abonelikKontrol';import {kazanc,kacanlar} from '@/lib/buyume';
 export const dynamic='force-dynamic';export const maxDuration=60;
 const TZ='Europe/Istanbul',gun=d=>new Date(d).toLocaleDateString('sv-SE',{timeZone:TZ});
 // Türkiye saatine göre bugünün başlangıcı (UTC+3, yaz saati yok)
@@ -37,7 +37,7 @@ export async function GET(req){
  // HAFTALIK RAPOR (Büyük ve Pro): pazartesi akşamı son 7 günün özeti
  let haftalik=0;const haftaGunu=new Date(new Date().toLocaleString('en-US',{timeZone:TZ})).getDay();
  if(haftaGunu===1){const hb=new Date(bas.getTime()-7*864e5);
-  const {data:l2}=await adminSb.from('businesses').select('id,quota_minutes_total,settings');
+  const {data:l2}=await adminSb.from('businesses').select('id,vertical,quota_minutes_total,settings');
   for(const b of l2||[]){if(!paketOf(b).haftalik||b.settings?.son_haftalik===bugun)continue;
    const [{data:c},{data:ap},{count:dolu}]=await Promise.all([
     adminSb.from('calls').select('created_at,duration_seconds,orders,kalite').eq('business_id',b.id).gte('created_at',hb.toISOString()).lt('created_at',bas.toISOString()).limit(5000),
@@ -49,6 +49,10 @@ export async function GET(req){
    const satir=[`📈 Haftalık rapor: ${L.length} çağrı, ${Math.round(L.reduce((t,x)=>t+(x.duration_seconds||0),0)/60)} dk`];
    const sip=L.filter(x=>x.orders).length;if(sip)satir.push(`🛵 ${sip} sipariş`);if(ap?.length)satir.push(`📅 ${ap.length} randevu`);
    satir.push(`⏰ En yoğun saat ${yh}:00 (${yn} çağrı)`);if(dolu)satir.push(`☎ ${dolu} arama hat dolu olduğu için size yönlendirildi`);if(ort)satir.push(`⭐ Ortalama görüşme puanı ${ort}/10`);
+   // Büyüme: kazanç ve "neyi kaçırıyorsun"
+   try{const k=await kazanc(b,hb);if(k.komisyon)satir.push(`💰 Telefondan gelen siparişlerle uygulama komisyonundan yaklaşık ${k.komisyon.toLocaleString('tr-TR')} ₺ kurtardınız`);
+    if(k.odul)satir.push(`🎁 ${k.odul} sadakat ödülü verildi`);if(k.bekleme)satir.push(`⏳ ${k.bekleme} iptal edilen saat için bekleme listesine haber verildi`);if(k.geriArama)satir.push(`📞 ${k.geriArama} eski müşteri arandı, ${k.geriDonus} tanesi sipariş verdi`);
+    const kc=await kacanlar(b,hb,bas);if(kc.length)satir.push('— Neyi kaçırıyorsunuz —',...kc);}catch{}
    await bildir(b.id,satir[0]+'\n'+satir.slice(1).join('\n'),'ozet');
    const {data:g}=await adminSb.from('businesses').select('settings').eq('id',b.id).single();
    await adminSb.from('businesses').update({settings:{...(g?.settings||{}),son_haftalik:bugun}}).eq('id',b.id);haftalik++;}}

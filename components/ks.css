@@ -83,3 +83,14 @@
 @keyframes dmVurgu{0%{color:#fff;text-shadow:0 0 14px rgba(255,31,61,1);background:rgba(255,31,61,.25)}100%{text-shadow:none;background:transparent}}
 .dm-bek{color:var(--mute);font-size:.9rem;padding:6px 0}
 .dm-alt{margin-top:10px;font-size:.74rem;color:var(--mute)}
+/* Panel → Büyüme */
+.by-kart{position:relative;overflow:hidden;border-color:rgba(255,31,61,.35)!important;background:radial-gradient(120% 120% at 100% 0%,rgba(255,31,61,.16),transparent 55%),var(--card,#111)!important}
+.by-ust{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.by-buyuk{text-align:right}.by-buyuk small{display:block;color:var(--mute,#999);font-size:.78rem}
+.by-buyuk b{font-size:2rem;font-weight:900;letter-spacing:-.02em;color:#2ee66b;text-shadow:0 0 22px rgba(46,230,107,.45)}
+.by-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.by-kpis>div{padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);display:flex;flex-direction:column;gap:2px}
+.by-kpis span{font-size:1.1rem}.by-kpis b{font-size:1.6rem;font-weight:900}.by-kpis small{color:var(--mute,#999);font-size:.78rem;line-height:1.25}
+@media(max-width:640px){.by-kpis{grid-template-columns:repeat(2,1fr)}.by-buyuk{text-align:left}}
+.by-izin{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 6px;padding:12px;border-radius:12px;background:rgba(255,255,255,.04)}
+.by-bek{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-top:1px solid rgba(255,255,255,.07)}

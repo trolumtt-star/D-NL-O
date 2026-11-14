@@ -1,4 +1,4 @@
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {e164} from '@/lib/vapi';import {paketOf} from '@/lib/paket';
+import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {e164} from '@/lib/vapi';import {paketOf} from '@/lib/paket';import {alisverisSayisi,sadakatAyar,sadakatMetni,izinliMi,geriAyar} from '@/lib/buyume';
 // Bu numarada şu an süren (bu arama hariç) kaç arama var? Vapi'ye sorulur; cevap gelmezse sınır uygulanmaz.
 const AKTIF=new Set(['queued','ringing','in-progress']);
 async function aktifSayisi(pid,buId){const key=process.env.VAPI_API_KEY;if(!key)return 0;
@@ -46,7 +46,7 @@ export async function POST(req){
    const vv={kampanya:pk.kampanya&&st.kampanya?.aktif?String(st.kampanya.metin||''):'',bilgi:pk.bilgi?String(st.bilgi||''):'',kapali:'',musteriAdi:'',sonIslem:'',aramaSayisi:'0'};
    const ov={},go=st.gorusme||{},ad=String(st.asistan?.ad||'').trim();
    const kayitCumle=go.kayit_kapali?'görüşme notlarımız hizmet kalitesi için tutulmaktadır':'görüşmemiz hizmet kalitesi için kaydedilmektedir';
-   Object.assign(vv,{asistanAdi:ad,kisilik:String(st.asistan?.kisilik||''),acilTanim:String(st.acil_tanim||''),maxDk:go.max_dk?String(go.max_dk):'',hatirlatma:'',randevuSaati:'',aktarma:pk.aktarma&&st.aktarma_no?'evet':''});
+   Object.assign(vv,{asistanAdi:ad,kisilik:String(st.asistan?.kisilik||''),acilTanim:String(st.acil_tanim||''),maxDk:go.max_dk?String(go.max_dk):'',hatirlatma:'',randevuSaati:'',izinli:'',geriArama:'',aktarma:pk.aktarma&&st.aktarma_no?'evet':''});
    // Görüşme ayarları: süre sınırı, ses kaydını kapatma, yavaş konuşma, özel ses
    if(go.max_dk>=2&&go.max_dk<=30)ov.maxDurationSeconds=go.max_dk*60;
    if(go.kayit_kapali)ov.artifactPlan={recordingEnabled:false};
@@ -70,6 +70,11 @@ export async function POST(req){
       ov.firstMessage=kap?`Hoş geldiniz ${g.customer_name}! ${biz.name||'İşletmemiz'} şu an kapalı ama ben buradayım; ${kayitCumle}. ${!st.tatil?.aktif&&st.working_hours?'Randevunuzu ayarlayayım mı?':'Talebinizi not alayım mı?'}`
        :`Hoş geldiniz ${g.customer_name}, sizi yeniden duymak çok güzel! Ben ${biz.name||'işletmenin'} yapay zeka asistanı${ad?' '+ad:'yım'}, ${kayitCumle}. Bugün nasıl yardımcı olabilirim?`;}
    }catch{}}
+   // SADAKAT ve KAMPANYA İZNİ: kaçıncı alışverişi olduğu kampanya değişkenine eklenir (asistan kesinleşince bir kez söyler)
+   if(arayan.length===10){const sa=sadakatAyar(st),gi=geriAyar(st);try{
+     const [n,iz]=await Promise.all([pk.sadik&&sa.aktif&&sa.odul?alisverisSayisi(biz.id,arayan):Promise.resolve(-1),pk.geri&&gi.aktif?izinliMi(biz.id,arayan):Promise.resolve(false)]);
+     if(n>=0){const m=sadakatMetni(sa,n,vv.musteriAdi);if(m)vv.kampanya=[vv.kampanya,m].filter(Boolean).join(' ');}
+     vv.izinli=iz?'evet':'hayır';}catch{}}
    return NextResponse.json({assistantId:biz.vapi_assistant_id,assistantOverrides:{...ov,variableValues:vv}});
   }
   return NextResponse.json({error:'Asistan tanımlı değil'});
