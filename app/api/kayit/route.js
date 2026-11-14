@@ -4,7 +4,6 @@ import {NextResponse} from 'next/server';import crypto from 'crypto';import {adm
 export const dynamic='force-dynamic';
 const hata=(m,s=400)=>NextResponse.json({error:m},{status:s});
 const ipHash=req=>crypto.createHash('sha256').update('kayit:'+(req.headers.get('x-forwarded-for')||'').split(',')[0].trim()+(process.env.SUPABASE_SERVICE_ROLE_KEY||'').slice(0,12)).digest('hex').slice(0,24);
-export const dynamic='force-dynamic';
 export async function GET(){const {data}=await adminSb.from('verticals').select('id,name,kind').order('sort');return NextResponse.json({sektorler:data||[],paketler:PK.map(p=>({id:p.id,ad:p.ad,dk:p.dk})),deneme:await denemeVarsayilan()});}
 export async function POST(req){try{const x=await req.json();
  if(x.web)return NextResponse.json({ok:true}); // bot tuzağı: görünmeyen alan doluysa sessizce geç
