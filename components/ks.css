@@ -26,7 +26,7 @@
 .ks-pill b{color:#fff}
 .ks-sec{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 .ks-sec button{all:unset;cursor:pointer;padding:12px;border-radius:14px;border:1px solid var(--rule);background:var(--soft);font-size:.9rem;font-weight:700;text-align:center;transition:all .2s}
-.ks-sec button.on{border-color:var(--red);background:var(--redSoft);box-shadow:0 0 0 1px var(--red) inset}
+.ks-sec button.secili{border-color:var(--red);background:var(--redSoft);box-shadow:0 0 0 1px var(--red) inset}
 /* sohbet */
 .ks-sohbet{display:flex;flex-direction:column;height:100dvh}
 .ks-akis{flex:1;overflow-y:auto;padding:4px 2px 16px;display:flex;flex-direction:column;gap:10px}
@@ -51,10 +51,35 @@
 .ks-kure::before,.ks-kure::after{content:'';position:absolute;inset:-14px;border-radius:50%;border:2px solid rgba(255,31,61,.5);animation:ksDalga 2.4s infinite}
 .ks-kure::after{animation-delay:1.2s}
 @keyframes ksDalga{from{transform:scale(.9);opacity:1}to{transform:scale(1.35);opacity:0}}
-.ks-kure.on::before,.ks-kure.on::after{animation:none;opacity:1;transform:scale(var(--v,1));transition:transform .08s}
-.ks-kure.on::after{inset:-30px;opacity:.5}
+.ks-kure.cal::before,.ks-kure.cal::after{animation:none;opacity:1;transform:scale(var(--v,1));transition:transform .08s}
+.ks-kure.cal::after{inset:-30px;opacity:.5}
 .ks-durum{font-family:var(--disp);font-size:1.15rem;letter-spacing:-.03em}
 .ks-sure{color:var(--mute);font-variant-numeric:tabular-nums;margin-top:4px}
 .ks-yazi{margin-top:16px;display:flex;flex-direction:column;gap:8px;text-align:left;max-height:260px;overflow-y:auto}
 .ks-yazi .ks-m{font-size:.9rem}
 @media (prefers-reduced-motion:reduce){.ks *,.ks *::before,.ks *::after{animation:none!important;transition:none!important}}
+/* canlı demo: sektörler ve panel kartı */
+.dm-sek{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:8px 0 14px}
+.dm-sek button{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:8px;padding:16px 14px;border-radius:18px;border:1px solid var(--rule);background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.01));font-weight:800;font-size:.95rem;transition:transform .15s,border-color .2s,box-shadow .2s;animation:ksUp .45s both}
+.dm-sek button span{font-size:1.8rem}
+.dm-sek button:hover,.dm-sek button:focus-visible{border-color:var(--red);box-shadow:0 0 0 1px var(--red),0 10px 30px -12px rgba(255,31,61,.7);transform:translateY(-2px)}
+.dm-geri{all:unset;cursor:pointer;color:var(--ink2);font-size:.9rem;padding:6px 0}
+.dm-bilgi summary{cursor:pointer;list-style:none}.dm-bilgi summary::-webkit-details-marker{display:none}
+.dm-bilgi textarea{min-height:76px;resize:vertical}
+.dm-panel{margin-top:18px;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.14);background:#0b0b0d;box-shadow:0 30px 70px -30px rgba(255,31,61,.7);animation:ksUp .5s both}
+.dm-bar{display:flex;align-items:center;gap:6px;padding:10px 14px;background:#141417;border-bottom:1px solid var(--rule);font-size:.78rem;color:var(--mute)}
+.dm-bar i{width:9px;height:9px;border-radius:50%;background:#3a3a40}.dm-bar i:first-child{background:#ff5f57}.dm-bar span{margin-left:8px}
+.dm-kart{margin:14px;padding:16px;border-radius:16px;border:1px solid rgba(255,31,61,.45);background:radial-gradient(140% 100% at 100% 0%,rgba(255,31,61,.14),transparent 60%),rgba(255,255,255,.02);transition:border-color .4s,background .4s}
+.dm-kart.ok{border-color:rgba(46,230,107,.6);background:radial-gradient(140% 100% at 100% 0%,rgba(46,230,107,.14),transparent 60%),rgba(255,255,255,.02)}
+.dm-ust{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;font-size:1rem}
+.dm-rozet{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--redSoft);border:1px solid rgba(255,31,61,.5);font-size:.74rem;font-weight:800;color:#fff}
+.dm-rozet i{width:7px;height:7px;border-radius:50%;background:var(--red);animation:dmNabiz 1.4s infinite}
+.dm-rozet.ok{background:rgba(46,230,107,.15);border-color:rgba(46,230,107,.6);animation:dmPop .5s cubic-bezier(.2,1.4,.4,1)}
+@keyframes dmNabiz{0%{box-shadow:0 0 0 0 rgba(255,31,61,.7)}70%,100%{box-shadow:0 0 0 8px rgba(255,31,61,0)}}
+@keyframes dmPop{from{transform:scale(.4)}}
+.dm-satir{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-top:1px solid var(--rule2);font-size:.92rem;animation:ksUp .4s both}
+.dm-satir span{color:var(--mute);flex:none}.dm-satir b{text-align:right;font-weight:700}
+.dm-satir.yeni b{animation:dmVurgu 2.4s ease-out}
+@keyframes dmVurgu{0%{color:#fff;text-shadow:0 0 14px rgba(255,31,61,1);background:rgba(255,31,61,.25)}100%{text-shadow:none;background:transparent}}
+.dm-bek{color:var(--mute);font-size:.9rem;padding:6px 0}
+.dm-alt{margin-top:10px;font-size:.74rem;color:var(--mute)}

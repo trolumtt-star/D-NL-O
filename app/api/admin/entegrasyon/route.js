@@ -14,15 +14,26 @@ export async function POST(req){try{await requireAdmin(req);const x=await req.js
   const {data:b}=await adminSb.from('businesses').select('id').eq('id',String(x.business_id||'')).maybeSingle();if(!b)return hata('İşletme bulunamadı.');
   const {error}=await adminSb.from('mesaj_kanallari').insert({business_id:b.id,tur,dis_id:dis,durum:'aktif'});if(error)return hata(/duplicate/.test(error.message)?'Bu kimlik zaten bağlı.':error.message);return NextResponse.json({ok:true});}
  if(x.islem==='sablon'){const id=String(x.id||'').trim();if(!/^[0-9a-f-]{36}$/.test(id))return hata('Geçerli bir Vapi asistan kimliği girin.');const r=await vapiIstek('/assistant/'+id);if(!r.ok)return hata('Asistan bulunamadı.');await adminSb.from('sistem_ayarlari').upsert({anahtar:'sablon_asistan',deger:{id}});return NextResponse.json({ok:true,mesaj:'Şablon asistan kaydedildi: yeni işletmelerin sesi ve modeli bundan kopyalanacak.'});}
- if(x.islem==='demo_kur'){const s=await sablon(),isl='Lezzet Durağı',
-   p=`Sen "${isl}" adlı bir dönerci ve kebapçının telefon asistanısın. Bu bir Dinlio AI CANLI DEMOSU: karşındaki kişi işletme sahibi olabilir ve seni deniyor. Gerçek bir müşteri gibi davran: sipariş al (ürün, adet, adres, isim), fiyat söyle, adres tarif edilirse anlayıp teyit et.
-Menü: Adana dürüm 180 TL, Tavuk dürüm 140 TL, Et döner porsiyon 260 TL, Tavuk döner porsiyon 190 TL, Lahmacun 90 TL, Ayran 30 TL, Kola 45 TL, Künefe 150 TL. Paket servis 3 km içine ücretsiz, en az sipariş 200 TL. Her gün 11:00-23:00 açık.
-Kısa ve doğal konuş, her seferinde tek soru sor. Siparişi sonunda tekrar edip onayla ve "siparişiniz işletmenin paneline düştü, 30-35 dakikada kapınızda" de.
-Sonra tek cümleyle şunu ekle: "Bu arada ben Dinlio AI'ım; sizin işletmenizin telefonunu da böyle açabilirim, sitede 7 gün ücretsiz deneyebilirsiniz." Yapay zekâ olduğunu sorarlarsa dürüstçe söyle. Konu dışı uzun sohbetlere girme.`;
-  const govde={name:'Dinlio · Canlı demo',firstMessage:`Merhaba, ${isl}, ben yapay zeka asistanıyım. Bu bir canlı demo görüşmesidir. Ne sipariş etmek istersiniz?`,model:{...s.model,messages:[{role:'system',content:p}],toolIds:undefined,tools:undefined},voice:s.voice,transcriber:s.transcriber,maxDurationSeconds:120,silenceTimeoutSeconds:20,endCallFunctionEnabled:true};
+ if(x.islem==='demo_kur'){const s=await sablon(),sec=process.env.VAPI_SECRET;
+  // Tek demo asistanı, sektöre göre ziyaretçinin verdiği bilgilerle (variableValues) şekillenir; bilgileri demo_kaydet aracıyla canlı karta yazar.
+  const p=`Sen "{{isletme}}" adlı {{sektor}} işletmesinin telefon asistanısın. Bu bir Dinlio AI CANLI DEMOSU: karşındaki kişi muhtemelen işletme sahibi ve seni deniyor; ona gerçek bir müşteriymiş gibi davran.
+Görevin: {{gorev}}.
+İşletme bilgileri (sadece bunlardan cevap ver, fiyat uydurma):
+- Ürünler / hizmetler ve fiyatlar: {{liste}}
+- Çalışma saatleri: {{saatler}}
+- Ek bilgi: {{ek}}
+Toplaman gerekenler: {{alanlar}}.
+KURALLAR: Kısa ve doğal konuş, her seferinde tek soru sor. Müşteri her yeni bilgi verdiğinde (isim, ürün/hizmet, adres, tarih, saat, telefon vb.) HEMEN demo_kaydet aracını o ana kadar bildiğin TÜM bilgilerle çağır ve konuşmaya devam et; bu bilgiler ekrandaki panele canlı düşer. Sonunda bilgileri tekrar edip onay al, demo_kaydet'i durum="onaylandi" ile çağır ve "kaydınız işletmenin paneline düştü" de.
+Sonra tek cümleyle ekle: "Bu arada ben Dinlio AI'ım; sizin işletmenizin telefonunu da böyle açabilirim." Yapay zekâ olduğunu sorarlarsa dürüstçe söyle. Konu dışı uzun sohbetlere girme.`;
+  const S=(t,d)=>({type:t,description:d});
+  const arac={type:'function',async:false,function:{name:'demo_kaydet',description:'Müşterinin o ana kadar verdiği bilgileri ekrandaki işletme paneline canlı yazar. Her yeni bilgide tüm bilgilerle tekrar çağrılır.',
+   parameters:{type:'object',properties:{musteri:S('string','Müşterinin adı'),telefon:S('string','Söylediği telefon'),istek:S('string','Sipariş edilen ürünler ve adetleri ya da istenen hizmet/oda/talep'),adres:S('string','Teslimat adresi veya tarif'),tarih:S('string','Randevu/rezervasyon günü'),saat:S('string','Saat'),kisi:S('string','Kişi sayısı / evcil hayvan / araç gibi ek bilgi'),tutar:S('string','Fiyat listesinden hesaplanan toplam tutar'),not:S('string','Ek not'),durum:{type:'string',enum:['taslak','onaylandi'],description:'Müşteri son onayı verdiyse onaylandi'}},required:[]}},
+   server:{url:SITE+'/api/demo/kart',...(sec?{headers:{'x-vapi-secret':sec}}:{})}};
+  const govde={name:'Dinlio · Canlı demo',firstMessage:'Merhaba, {{isletme}}, ben yapay zeka asistanıyım. Size nasıl yardımcı olabilirim?',
+   model:{...s.model,messages:[{role:'system',content:p}],toolIds:undefined,tools:[arac]},voice:s.voice,transcriber:s.transcriber,maxDurationSeconds:150,silenceTimeoutSeconds:20,endCallFunctionEnabled:true};
   const {data:a}=await adminSb.from('sistem_ayarlari').select('deger').eq('anahtar','demo').maybeSingle();
   let id=a?.deger?.id;const r=id?await vapiIstek('/assistant/'+id,{method:'PATCH',body:JSON.stringify(govde)}):{ok:false};
   if(!r.ok){const c=await vapiIstek('/assistant',{method:'POST',body:JSON.stringify(govde)});if(!c.ok)return hata('Demo asistanı oluşturulamadı: '+c.error);id=c.d.id;}
-  await adminSb.from('sistem_ayarlari').upsert({anahtar:'demo',deger:{id,isletme:isl}});return NextResponse.json({ok:true,mesaj:'Canlı demo asistanı hazır.'+(process.env.VAPI_PUBLIC_KEY?'':' Vercel\'e VAPI_PUBLIC_KEY eklemeyi unutmayın.')});}
+  await adminSb.from('sistem_ayarlari').upsert({anahtar:'demo',deger:{id,surum:2}});return NextResponse.json({ok:true,mesaj:'Canlı demo asistanı hazır.'+(process.env.VAPI_PUBLIC_KEY?'':' Vercel\'e VAPI_PUBLIC_KEY eklemeyi unutmayın.')});}
  if(x.islem==='kanal_sil'){await adminSb.from('mesaj_kanallari').delete().eq('id',String(x.id||''));return NextResponse.json({ok:true});}
  return hata('Geçersiz işlem');}catch(e){return hata(e.message,e.message==='Yetkisiz'?401:400);}}

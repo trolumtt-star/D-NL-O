@@ -17,7 +17,7 @@ export default function Kayit(){
   <form className="ks-kart" style={{marginTop:14}} onSubmit={gonder}>
    <label>Adın soyadın</label><input value={f.ad} onChange={e=>setF({...f,ad:e.target.value})} autoComplete="name" required/>
    <label>İşletmenin adı</label><input value={f.isletme} onChange={e=>setF({...f,isletme:e.target.value})} placeholder="ör. Beyzade Kebap" required/>
-   <label>Sektörün</label><div className="ks-sec">{sec.map(x=><button type="button" key={x.id} className={'ni '+(f.sektor===x.id?'on':'')} onClick={()=>setF({...f,sektor:x.id})}>{x.name}</button>)}</div>
+   <label>Sektörün</label><div className="ks-sec">{sec.map(x=><button type="button" key={x.id} className={'ni '+(f.sektor===x.id?'secili':'')} onClick={()=>setF({...f,sektor:x.id})}>{x.name}</button>)}</div>
    <label>Telefon</label><input value={f.tel} onChange={e=>setF({...f,tel:e.target.value})} inputMode="tel" autoComplete="tel" placeholder="05xx xxx xx xx" required/>
    <label>E-posta</label><input type="email" value={f.eposta} onChange={e=>setF({...f,eposta:e.target.value})} autoComplete="email" required/>
    <label>Şifre</label><input type="password" value={f.sifre} onChange={e=>setF({...f,sifre:e.target.value})} autoComplete="new-password" placeholder="En az 8 karakter, harf ve rakam" required/>
