@@ -18,7 +18,7 @@ const metin=()=>`# Dinlio AI
 Telefonla sipariş veya randevu alan her işletme: restoran, dönerci, pideci, kafe, su ve tüp bayisi, kuaför, berber, güzellik merkezi, diş kliniği, doktor muayenehanesi, veteriner, oto servis, lastikçi, spor salonu, pilates, otel, pansiyon, emlak ofisi, toptancı.
 
 ## Fiyat
-Aylık paketler ABD doları ile fiyatlanır, Türk lirası karşılığı güncel kurla gösterilir. 1 hafta ücretsiz deneme vardır. Yıllık ödemede 2 ay bedava.
+Aylık paketler ABD doları ile fiyatlanır, Türk lirası karşılığı güncel kurla gösterilir. 7 gün ücretsiz deneme vardır: ${SITE}/kayit adresinden hesap açılır, işletme sahibi işini anlatır ve yapay zekâ asistanı 3 dakikada kendisi kurar. Kart bilgisi istenmez. Yıllık ödemede 2 ay bedava. Tarayıcıdan canlı demo: ${SITE}/demo
 - Başlangıç: 100 dakika, aynı anda 1 arama. Sipariş, randevu, rezervasyon, canlı panel, telefona bildirim ve bildirimden Onayla/Reddet, akşam özeti, kapalı saat / tatil modu, kara liste, acil durum ayrımı, teslimat bölgesi kontrolü, "siparişim nerede?" cevabı, asistana isim ve konuşma tarzı, görüşme süresi sınırı, yavaş konuşma, geri aranacaklar listesi.
 - Standart: 300 dakika, aynı anda 2 arama, 3 çalışan hesabı; ayrıca sadık müşteriyi adıyla karşılama, ses kaydı dinleme, müşteri defteri ve Excel, kampanya duyurusu, müşteri duygusu ve yapılacaklar, yetkiliye aktarma, onay SMS'i, e-posta özeti, Google Takvim, özel ses / ses kopyası, Dinlio Go kurye uygulaması (kuryeye paket bildirimi, yol tarifi, müşteriye canlı takip linki), WhatsApp otomatik cevap, Google yorum isteme.
 - Büyük: 600 dakika, aynı anda 3 arama, 10 çalışan hesabı; ayrıca bilgi bankası, haftalık rapor, CRM / kendi sisteme webhook, randevu hatırlatma (SMS veya arama).

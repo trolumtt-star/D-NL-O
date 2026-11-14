@@ -3,6 +3,7 @@
 import {useEffect,useState} from 'react';
 const ADIM={
  vapi:['Vapi (telefon asistanı)',['Zaten bağlı olmalı: VAPI_API_KEY.']],
+ demo:['Canlı demo ve kendi kendine kurulum',['Vapi > API Keys > Public Key\'i kopyalayın → Vercel: VAPI_PUBLIC_KEY. Aynı ekranda izinli alan adı olarak sitenizi (dinlio.vercel.app) ekleyin.','Aşağıdan şablon asistanı seçin: yeni işletmelerin sesi ve modeli bundan kopyalanır (boşsa ilk işletmenin asistanı kullanılır).','"Demo asistanını kur" tuşuna basın; sitedeki "Asistanla konuş" butonu çalışmaya başlar.','Vapi > Billing\'de aylık harcama limiti koyun (demo herkese açık).']],
  netgsm:['Netgsm (SMS, Türk numarası)',['Netgsm\'den sabit numara + SMS paketi alın, numarayı "SIP / IP santral" olarak açtırın.','SMS gönderici başlığınızı (ör. DINLIOAI) onaylatın.','Vercel > Settings > Environment Variables: NETGSM_USERCODE, NETGSM_PASSWORD (API alt kullanıcısı), NETGSM_HEADER.','SIP bilgilerini Vapi > Phone Numbers > Import (SIP trunk) kısmına girin; numara Vapi\'de görünür.','Aşağıdan test SMS\'i gönderin.']],
  eposta:['E-posta (arama özeti)',['resend.com\'da ücretsiz hesap açın, alan adınızı ekleyip DNS kayıtlarını girin.','Vercel: RESEND_API_KEY ve RESEND_FROM (ör. Dinlio AI <bildirim@alanadiniz.com>).','Aşağıdan test e-postası gönderin.']],
  whatsapp:['WhatsApp Business',['business.facebook.com\'da işletme hesabı + developers.facebook.com\'da uygulama açın, WhatsApp ürününü ekleyin.','Sistem kullanıcısı için kalıcı anahtar üretin → Vercel: META_WA_TOKEN.','Uygulama gizli anahtarı → META_APP_SECRET; kendi belirlediğiniz bir kelime → META_VERIFY_TOKEN.','Webhook adresi: {SITE}/api/mesaj/meta, doğrulama kelimesi META_VERIFY_TOKEN; "messages" olayına abone olun.','İşletmenin WhatsApp numara kimliğini (Phone number ID) aşağıdan işletmeye bağlayın.']],
@@ -21,6 +22,9 @@ export default function Entegrasyonlar({tok}){
    {ac===k&&<ol style={{margin:'8px 0 0 18px'}}>{adim.map((x,i)=><li key={i} className="mut" style={{marginBottom:4}}>{x.replaceAll('{SITE}',d.site)}</li>)}</ol>}</div>)}</div>
   <div className="frm" style={{marginTop:12}}><label>Test SMS numarası<input value={f.no} onChange={e=>setF({...f,no:e.target.value})} placeholder="05xx xxx xx xx"/></label><button className="g" disabled={!d.durum.netgsm} onClick={()=>is({islem:'sms_test',no:f.no})}>Test SMS</button>
    <label>Test e-posta<input value={f.adres} onChange={e=>setF({...f,adres:e.target.value})} placeholder="ornek@mail.com"/></label><button className="g" disabled={!d.durum.eposta} onClick={()=>is({islem:'eposta_test',adres:f.adres})}>Test e-posta</button></div>
+  <h3 style={{marginTop:14}}>Canlı demo ve şablon asistan</h3>
+  <div className="frm"><label>Şablon asistan ID<input value={f.sablon??(d.sablon||'')} onChange={e=>setF({...f,sablon:e.target.value.trim()})} placeholder="Vapi asistan kimliği (boş = ilk işletmeninki)"/></label><button className="g" onClick={()=>is({islem:'sablon',id:f.sablon})}>Kaydet</button>
+   <button onClick={()=>is({islem:'demo_kur'})}>{d.demoId?'Demo asistanını güncelle':'Demo asistanını kur'}</button></div>
   <h3 style={{marginTop:14}}>İşletmeye mesaj kanalı bağla</h3>
   <div className="frm"><label>İşletme ID<input value={f.business_id} onChange={e=>setF({...f,business_id:e.target.value.trim()})} placeholder="işletmenin uuid'si"/></label>
    <label>Kanal<select value={f.tur} onChange={e=>setF({...f,tur:e.target.value})}><option value="whatsapp">WhatsApp (Phone number ID)</option><option value="instagram">Instagram (hesap ID)</option></select></label>
