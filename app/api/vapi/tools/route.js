@@ -1,4 +1,4 @@
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {tariftenBul} from '@/lib/harita';import {bildir,siparisBildir} from '@/lib/bildir';import {paketOf} from '@/lib/paket';import {smsGonder} from '@/lib/entegrasyon';import {takvimeYaz} from '@/lib/google';import {kuryeCagir} from '@/lib/kurye';import {sadakatKontrol,randevuTeyit,beklemeEkle,izinKaydet,son10} from '@/lib/buyume';
+import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {tariftenBul} from '@/lib/harita';import {bildir,siparisBildir} from '@/lib/bildir';import {paketOf} from '@/lib/paket';import {smsGonder} from '@/lib/entegrasyon';import {takvimeYaz} from '@/lib/google';import {kuryeCagir} from '@/lib/kurye';import {sadakatKontrol,randevuTeyit,beklemeEkle,izinKaydet,son10,ekSatisKaydet,patronIslem} from '@/lib/buyume';
 // Kuş uçuşu mesafe (km)
 const km=(a,b)=>{const R=6371,r=x=>x*Math.PI/180,dl=r(b.lat-a.lat),dg=r(b.lng-a.lng),h=Math.sin(dl/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dg/2)**2;return 2*R*Math.asin(Math.sqrt(h));};
 const DURUM={new:'alındı, hazırlanmayı bekliyor',preparing:'hazırlanıyor',delivering:'yolda, kurye çıktı',done:'teslim edildi',cancelled:'iptal edildi'};
@@ -35,7 +35,7 @@ export async function POST(req){
    if(sq){const {data:s1}=await adminSb.from('services').select('id').eq('business_id',bid).eq('active',true).ilike('name','%'+sq+'%').limit(1);sid=s1?.[0]?.id||null;}
    if(name==='check_availability'){const {data,error}=await adminSb.rpc('free_slots',{p_business:bid,p_date:date,p_service:sid});out=error?{ok:false,reason:error.message}:{ok:true,date,free_slots:data,message:data.length?`Müsait saatler: ${data.join(', ')}`:'Bu gün müsait saat yok veya kapalıyız.'};}
    else{const rq=String(a.doctor||a.staff||'').replace(/[%_,()]/g,' ').trim();if(rq){const {data:r1}=await adminSb.from('resources').select('id').eq('business_id',bid).eq('active',true).ilike('name','%'+rq+'%').limit(1);resId=r1?.[0]?.id||null;}
-    const {data,error}=await adminSb.rpc('book_appointment',{p_business:bid,p_date:date,p_time:time,p_service:sid,p_resource:resId,p_name:a.name||null,p_phone:a.phone||call.customer?.number||null,p_notes:a.notes?String(a.notes).slice(0,300):null,p_call:null,p_source:'vapi'});out=error?{ok:false,reason:error.message}:data;if(data?.ok&&!data.duplicate){let odul=null;if(pk.sadik)try{odul=await sadakatKontrol(bid,ay,son10(a.phone||call.customer?.number),call.id);}catch{}
+    const {data,error}=await adminSb.rpc('book_appointment',{p_business:bid,p_date:date,p_time:time,p_service:sid,p_resource:resId,p_name:a.name||null,p_phone:a.phone||call.customer?.number||null,p_notes:a.notes?String(a.notes).slice(0,300):null,p_call:null,p_source:'vapi'});out=error?{ok:false,reason:error.message}:data;if(data?.ok&&!data.duplicate){if(a.ekSatis&&pk.ekSatis&&call.id)try{await ekSatisKaydet(bid,call.id,a.ekSatis,'services');}catch{}let odul=null;if(pk.sadik)try{odul=await sadakatKontrol(bid,ay,son10(a.phone||call.customer?.number),call.id);}catch{}
      await bildir(bid,`${odul?.odul?`🎁 SADAKAT ÖDÜLÜ (${odul.n}. randevu): ${odul.odul}\n`:''}📅 Yeni randevu\n${date} ${time}${a.service?' · '+a.service:''}${a.name?'\n👤 '+a.name:''}${a.phone||call.customer?.number?'\n📞 '+(a.phone||call.customer?.number):''}`);
      if(pk.takvim)await takvimeYaz(bid,{baslik:`${a.name||'Randevu'}${a.service?' · '+a.service:''}`,bas:`${date}T${time}:00+03:00`,dk:30,aciklama:`Dinlio AI randevusu\nTelefon: ${a.phone||call.customer?.number||'-'}${a.notes?'\nNot: '+a.notes:''}`});
      if(pk.sms&&ay.sms_onay){const no=a.phone||call.customer?.number;if(no)await smsGonder(no,`${biz.name||'İşletme'}: ${date.split('-').reverse().join('.')} saat ${time} randevunuz oluşturuldu. Değişiklik için bizi arayabilirsiniz.`);}}}}
@@ -56,6 +56,7 @@ export async function POST(req){
     if(!error&&cid&&a.acil===true)await adminSb.from('calls').update({acil:true}).eq('id',cid);
     if(!error&&cid&&(a.lat||a.kuryeNotu)){const {data:cr}=await adminSb.from('calls').select('extracted').eq('id',cid).single();const ek={...(cr?.extracted||{})};
      if(+a.lat&&+a.lng)ek.konum={lat:+a.lat,lng:+a.lng};if(a.kuryeNotu)ek.kuryeNotu=String(a.kuryeNotu).slice(0,300);await adminSb.from('calls').update({extracted:ek}).eq('id',cid);}
+    if(!error&&cid&&a.ekSatis&&pk.ekSatis)try{await ekSatisKaydet(bid,call.id,a.ekSatis,'menu_items');}catch{}
     let odul=null;if(!error&&cid&&pk.sadik)try{odul=await sadakatKontrol(bid,ay,son10(sp||call.customer?.number),call.id);}catch{}
     if(!error&&cid)await siparisBildir(bid,cid,`${odul?.odul?`🎁 SADAKAT ÖDÜLÜ (${odul.n}. sipariş): ${odul.odul}\n`:''}${a.acil===true?'🚨 ACİL · ':''}🛵 Yeni sipariş\n${or}${a.address?'\n📍 '+a.address:''}${a.customerName?'\n👤 '+a.customerName:''}${sp||call.customer?.number?'\n📞 '+(sp||call.customer?.number):''}${+a.lat&&+a.lng?`\n🗺 https://maps.google.com/?q=${a.lat},${a.lng}`:''}`);
     if(!error&&cid&&pk.sms&&ay.sms_onay){const no=sp||call.customer?.number;const {count:onceki}=await adminSb.from('webhook_events').select('id',{count:'exact',head:true}).eq('type','sms_onay').eq('vapi_call_id',call.id);
@@ -86,6 +87,7 @@ export async function POST(req){
    else{const {data:o}=await adminSb.from('calls').select('orders,order_status,created_at').eq('business_id',bid).not('orders','is',null).or(`caller_phone.ilike.%${no},stated_phone.ilike.%${no}`).gte('created_at',new Date(Date.now()-12*36e5).toISOString()).order('created_at',{ascending:false}).limit(1);
     const x=o?.[0];out=x?{ok:true,...(ayni?{siparis:x.orders}:{}),durum:DURUM[x.order_status||'new'],verilis:new Date(x.created_at).toLocaleTimeString('tr-TR',{timeZone:TZ,hour:'2-digit',minute:'2-digit'}),message:`Siparişin durumu: ${DURUM[x.order_status||'new']}. Müşteriye bunu söyle; kesin süre sorarsa işletmeye ileteceğini söyle.`}
      :{ok:true,bulunamadi:true,message:'Bu numarayla son 12 saatte sipariş bulunamadı. Müşteriye başka bir numarayla verip vermediğini sor.'};}}
+  else if(name==='patron_islem')out=await patronIslem({bid,biz:{...biz,id:bid},a,call});
   else if(name==='randevu_teyit')out=await randevuTeyit({bid,biz,pk,a,call});
   else if(name==='bekleme_listesi')out=await beklemeEkle({bid,a,call,tarih:date});
   else if(name==='kampanya_izni')out=await izinKaydet({bid,a,call});
@@ -98,7 +100,7 @@ export async function POST(req){
     if(bolge&&out&&typeof out==='object'){const isle=x=>{if(x&&+x.lat&&+x.lng){const d=km(bolge.merkez,{lat:+x.lat,lng:+x.lng});x.uzaklikKm=+d.toFixed(1);if(d>bolge.km)x.teslimatBolgesiDisinda=true;}};(Array.isArray(out.adaylar)?out.adaylar:[]).forEach(isle);isle(out);if(out.teslimatBolgesiDisinda||(Array.isArray(out.adaylar)&&out.adaylar.length&&out.adaylar.every(x=>x.teslimatBolgesiDisinda)))out.uyari=`Bu konum teslimat bölgesinin (${bolge.km} km) dışında görünüyor. Müşteriye kibarca bildir, gel-al öner.`;}}catch(e){out={ok:false,reason:'Harita şu an cevap vermedi. Müşteriden tarifi kurye notu olarak al, sipariş yine kaydedilsin.'};}}
   else out={ok:false,reason:'unknown_tool'};
   if(out&&typeof out==='object'&&!Array.isArray(out))out.bugun=today();
-  await log('tool_call',bid,out?.ok===false?String(out.reason||'hata'):null,{tool:name,args:a,result:out});
+  await log('tool_call',bid,out?.ok===false?String(out.reason||'hata'):null,{tool:name,args:a?.pin?{...a,pin:'***'}:a,result:out});
   results.push({toolCallId:tc.id,result:JSON.stringify(out)});}
  if(!calls.length)await log('tool_call',bid,'Araç isteği geldi ama içinde araç çağrısı yok (mesaj tipi: '+(m.type||'?')+')');
  return NextResponse.json({results});}

@@ -1,4 +1,4 @@
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {e164} from '@/lib/vapi';import {paketOf} from '@/lib/paket';import {alisverisSayisi,sadakatAyar,sadakatMetni,izinliMi,geriAyar} from '@/lib/buyume';
+import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {e164} from '@/lib/vapi';import {paketOf} from '@/lib/paket';import {alisverisSayisi,sadakatAyar,sadakatMetni,izinliMi,geriAyar,ekSatisAyar,patronMu} from '@/lib/buyume';
 // Bu numarada şu an süren (bu arama hariç) kaç arama var? Vapi'ye sorulur; cevap gelmezse sınır uygulanmaz.
 const AKTIF=new Set(['queued','ringing','in-progress']);
 async function aktifSayisi(pid,buId){const key=process.env.VAPI_API_KEY;if(!key)return 0;
@@ -34,6 +34,9 @@ export async function POST(req){
   if(biz.vapi_assistant_id){
    const pk=paketOf(biz),st=biz.settings||{},num=e164(st.kota_yonlendirme||biz.phone_number);
    const arayan=String(m.call?.customer?.number||m.customer?.number||'').replace(/\D/g,'').slice(-10);
+   // PATRON HATTI: işletme sahibi kayıtlı numarasından arıyorsa patron modunda açılır (PIN asistanda sorulur)
+   if(pk.patron&&patronMu(st,arayan)){const ad0=String(st.asistan?.ad||'').trim();
+    return NextResponse.json({assistantId:biz.vapi_assistant_id,assistantOverrides:{firstMessage:`Merhaba, patron hattına hoş geldiniz${ad0?', ben '+ad0:''}. Güvenlik için dört haneli PIN kodunuzu söyler misiniz?`,variableValues:{patron:'evet',kampanya:'',bilgi:'',kapali:'',musteriAdi:'',sonIslem:'',aramaSayisi:'0',asistanAdi:ad0,kisilik:'',acilTanim:'',maxDk:'',yavas:'',hatirlatma:'',randevuSaati:'',izinli:'evet',geriArama:'',ekSatis:'',cokDil:'',aktarma:''},maxDurationSeconds:300}});}
    // KARA LİSTE: engellenen numara asistana hiç bağlanmaz (dakika da harcanmaz)
    if(arayan.length===10&&(st.kara_liste||[]).includes(arayan)){
     await adminSb.from('webhook_events').insert({type:'kara_liste',business_id:biz.id,vapi_call_id:m.call?.id||null,payload:{numara:'***'+arayan.slice(-4)}});
@@ -46,7 +49,7 @@ export async function POST(req){
    const vv={kampanya:pk.kampanya&&st.kampanya?.aktif?String(st.kampanya.metin||''):'',bilgi:pk.bilgi?String(st.bilgi||''):'',kapali:'',musteriAdi:'',sonIslem:'',aramaSayisi:'0'};
    const ov={},go=st.gorusme||{},ad=String(st.asistan?.ad||'').trim();
    const kayitCumle=go.kayit_kapali?'görüşme notlarımız hizmet kalitesi için tutulmaktadır':'görüşmemiz hizmet kalitesi için kaydedilmektedir';
-   Object.assign(vv,{asistanAdi:ad,kisilik:String(st.asistan?.kisilik||''),acilTanim:String(st.acil_tanim||''),maxDk:go.max_dk?String(go.max_dk):'',hatirlatma:'',randevuSaati:'',izinli:'',geriArama:'',aktarma:pk.aktarma&&st.aktarma_no?'evet':''});
+   Object.assign(vv,{asistanAdi:ad,kisilik:String(st.asistan?.kisilik||''),acilTanim:String(st.acil_tanim||''),maxDk:go.max_dk?String(go.max_dk):'',hatirlatma:'',randevuSaati:'',izinli:'',geriArama:'',patron:'',cokDil:pk.cokDil&&st.cok_dil?.aktif?'evet':'',ekSatis:(()=>{const e=ekSatisAyar(st);return pk.ekSatis&&e.aktif?(e.oneri||'siparişe/randevuya uyan, listede olan bir ürün veya hizmet'):'';})(),aktarma:pk.aktarma&&st.aktarma_no?'evet':''});
    // Görüşme ayarları: süre sınırı, ses kaydını kapatma, yavaş konuşma, özel ses
    if(go.max_dk>=2&&go.max_dk<=30)ov.maxDurationSeconds=go.max_dk*60;
    if(go.kayit_kapali)ov.artifactPlan={recordingEnabled:false};
