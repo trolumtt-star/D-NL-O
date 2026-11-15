@@ -105,3 +105,11 @@
 .sa-ozet{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:16px 0 4px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid var(--rule)}
 .sa-ozet span{color:var(--ink2);font-size:.9rem}.sa-ozet small{color:var(--mute);font-weight:500}
 @media(max-width:560px){.sa-pk{grid-template-columns:repeat(2,1fr)}.sa-num{grid-template-columns:1fr}}
+/* Yönlendirme testi ekranı */
+.yt-ekran{position:fixed;inset:0;z-index:300;display:grid;place-items:center;background:rgba(0,0,0,.82);backdrop-filter:blur(8px);padding:20px}
+.yt-kutu{max-width:420px;width:100%;text-align:center;padding:30px 24px;border-radius:24px;background:#0d0d10;border:1px solid rgba(255,31,61,.5);box-shadow:0 30px 80px -20px rgba(255,31,61,.6)}
+.yt-kutu h2{margin:10px 0 8px;font-size:1.5rem}.yt-kutu p{color:#cfcfd4;line-height:1.5}
+.yt-tel{font-size:3rem;display:inline-grid;place-items:center;width:96px;height:96px;border-radius:50%;background:rgba(255,31,61,.15);animation:ytCal 1s ease-in-out infinite}
+.yt-tel.ok{background:rgba(46,230,107,.15);animation:none}
+@keyframes ytCal{0%,100%{transform:rotate(0)}10%{transform:rotate(-14deg)}20%{transform:rotate(14deg)}30%{transform:rotate(-10deg)}40%{transform:rotate(10deg)}50%{transform:rotate(0)}}
+.yt-say{font-size:2.6rem;font-weight:900;margin-top:10px}

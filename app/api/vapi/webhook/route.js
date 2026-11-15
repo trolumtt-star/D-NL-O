@@ -17,6 +17,8 @@ export async function POST(req){
  if(process.env.VAPI_SECRET&&req.headers.get('x-vapi-secret')!==process.env.VAPI_SECRET){await log('reddedildi',null,null,'VAPI_SECRET uyuşmuyor. Vapi secret başlığı: '+(req.headers.get('x-vapi-secret')?'geldi ama farklı':'hiç gelmedi'));return NextResponse.json({error:'unauthorized'},{status:401});}
  const body=await req.json(),m=body.message||body,type=m.type||'unknown',call=m.call||{},aid=call.assistantId||m.assistant?.id;
  if(type!=='end-of-call-report'||!call.id)return NextResponse.json({ok:true,ignored:type});
+ // Yönlendirme testi ve test hattının giden araması: çağrı/dakika olarak kaydedilmez
+ if(call.assistantOverrides?.variableValues?.yonlendirmeTest==='evet'||call.metadata?.dinlio_test||call.assistant?.metadata?.dinlio_test)return NextResponse.json({ok:true,ignored:'test'});
  const bid=await resolve(req,'events',aid);
  await adminSb.from('webhook_events').insert({type,vapi_call_id:call.id,business_id:bid,payload:body});
  if(!bid){await log('reddedildi',null,call.id,'İşletme bulunamadı. Adres yanlış veya araç adresi kullanılmış, ya da assistant ID eşleşmiyor.');return NextResponse.json({ok:true,error:'business_not_found'});}

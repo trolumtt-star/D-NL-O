@@ -1,4 +1,4 @@
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {e164} from '@/lib/vapi';import {paketOf} from '@/lib/paket';import {alisverisSayisi,sadakatAyar,sadakatMetni,izinliMi,geriAyar,ekSatisAyar,patronMu} from '@/lib/buyume';
+import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {e164} from '@/lib/vapi';import {paketOf} from '@/lib/paket';import {testYakala} from '@/lib/yonlendirme';import {alisverisSayisi,sadakatAyar,sadakatMetni,izinliMi,geriAyar,ekSatisAyar,patronMu} from '@/lib/buyume';
 // Bu numarada şu an süren (bu arama hariç) kaç arama var? Vapi'ye sorulur; cevap gelmezse sınır uygulanmaz.
 const AKTIF=new Set(['queued','ringing','in-progress']);
 async function aktifSayisi(pid,buId){const key=process.env.VAPI_API_KEY;if(!key)return 0;
@@ -34,6 +34,8 @@ export async function POST(req){
   if(biz.vapi_assistant_id){
    const pk=paketOf(biz),st=biz.settings||{},num=e164(st.kota_yonlendirme||biz.phone_number);
    const arayan=String(m.call?.customer?.number||m.customer?.number||'').replace(/\D/g,'').slice(-10);
+   // YÖNLENDİRME TESTİ: arayan bizim test hattımızsa (işletmenin kendi numarasından yönlenmiş) testi başarılı say, kısaca söyle ve kapat
+   if(arayan.length===10&&await testYakala(biz,arayan).catch(()=>false))return NextResponse.json({assistantId:biz.vapi_assistant_id,assistantOverrides:{firstMessage:'Dinlio bağlantı testi başarılı. Hattınız çalışıyor.',maxDurationSeconds:10,variableValues:{yonlendirmeTest:'evet'}}});
    // PATRON HATTI: işletme sahibi kayıtlı numarasından arıyorsa patron modunda açılır (PIN asistanda sorulur)
    if(pk.patron&&patronMu(st,arayan)){const ad0=String(st.asistan?.ad||'').trim();
     return NextResponse.json({assistantId:biz.vapi_assistant_id,assistantOverrides:{firstMessage:`Merhaba, patron hattına hoş geldiniz${ad0?', ben '+ad0:''}. Güvenlik için dört haneli PIN kodunuzu söyler misiniz?`,variableValues:{patron:'evet',kampanya:'',bilgi:'',kapali:'',musteriAdi:'',sonIslem:'',aramaSayisi:'0',asistanAdi:ad0,kisilik:'',acilTanim:'',maxDk:'',yavas:'',hatirlatma:'',randevuSaati:'',izinli:'evet',geriArama:'',ekSatis:'',cokDil:'',aktarma:''},maxDurationSeconds:300}});}
