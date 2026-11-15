@@ -46,7 +46,8 @@ export async function POST(req){
     if(n>=pk.eszamanli){await adminSb.from('webhook_events').insert({type:'hat_dolu',business_id:biz.id,vapi_call_id:m.call?.id||null,payload:{aktif:n,sinir:pk.eszamanli,paket:pk.ad}});
      return NextResponse.json({destination:{type:'number',number:num,message:'Şu an tüm hatlarımız dolu, sizi doğrudan işletmeye bağlıyorum.'}});}}
    // Asistanın promptundaki {{kampanya}}, {{bilgi}}, {{kapali}} değişkenleri her aramada buradan dolar.
-   const vv={kampanya:pk.kampanya&&st.kampanya?.aktif?String(st.kampanya.metin||''):'',bilgi:pk.bilgi?String(st.bilgi||''):'',kapali:'',musteriAdi:'',sonIslem:'',aramaSayisi:'0'};
+   // İşletme bilgisi (adres, saatler, servis bölgesi, SSS) her pakette gider; Büyük+ pakette uzun bilgi bankası (4000 karakter).
+   const vv={kampanya:pk.kampanya&&st.kampanya?.aktif?String(st.kampanya.metin||''):'',bilgi:String(st.bilgi||'').slice(0,pk.bilgi?4000:1500),kapali:'',musteriAdi:'',sonIslem:'',aramaSayisi:'0'};
    const ov={},go=st.gorusme||{},ad=String(st.asistan?.ad||'').trim();
    const kayitCumle=go.kayit_kapali?'görüşme notlarımız hizmet kalitesi için tutulmaktadır':'görüşmemiz hizmet kalitesi için kaydedilmektedir';
    Object.assign(vv,{asistanAdi:ad,kisilik:String(st.asistan?.kisilik||''),acilTanim:String(st.acil_tanim||''),maxDk:go.max_dk?String(go.max_dk):'',hatirlatma:'',randevuSaati:'',izinli:'',geriArama:'',patron:'',cokDil:pk.cokDil&&st.cok_dil?.aktif?'evet':'',ekSatis:(()=>{const e=ekSatisAyar(st);return pk.ekSatis&&e.aktif?(e.oneri||'siparişe/randevuya uyan, listede olan bir ürün veya hizmet'):'';})(),aktarma:pk.aktarma&&st.aktarma_no?'evet':''});
