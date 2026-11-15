@@ -9,7 +9,7 @@ export async function POST(req){
  let body;try{body=await req.json();}catch{return NextResponse.json({results:[]});}
  const m=body.message||{},call=m.call||{},liste=m.toolCallList||m.toolCalls||[];
  const {data:a}=await adminSb.from('sistem_ayarlari').select('deger').eq('anahtar','demo').maybeSingle();
- const demo=a?.deger?.id&&(call.assistantId===a.deger.id||m.assistant?.id===a.deger.id);
+ const ids=Object.values(a?.deger?.sektor||{}),aid=call.assistantId||m.assistant?.id,demo=!!aid&&ids.includes(aid);
  const results=[];
  for(const tc of liste){let x=tc.function?.arguments||tc.arguments||{};if(typeof x==='string'){try{x=JSON.parse(x);}catch{x={};}}
   if(!demo||!/^[0-9a-f-]{36}$/.test(String(call.id||''))){results.push({toolCallId:tc.id,result:'Kaydedildi.'});continue;}

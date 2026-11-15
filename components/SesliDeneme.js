@@ -1,7 +1,7 @@
 'use client';
 // Tarayıcıdan sesli görüşme (Vapi Web). demo: sitedeki canlı demo; benim: işletmenin kendi asistanı (panel).
 import {useEffect,useRef,useState} from 'react';
-export default function SesliDeneme({benim=false,tok=null,kisa=false,ayar=null,onCagri=null,onDurum=null,yaziGizle=false,altMetin=null}){
+export default function SesliDeneme({benim=false,tok=null,kisa=false,ayar=null,onCagri=null,onDurum=null,yaziGizle=false,altMetin=null,sektor=null}){
  const [d,setD]=useState('hazir'),[hata,setHata]=useState(''),[v,setV]=useState(1),[sn,setSn]=useState(0),[yazi,setYazi]=useState([]),[ad,setAd]=useState('');
  const vr=useRef(null),t0=useRef(0),kutu=useRef(null);
  useEffect(()=>{if(d!=='konusuyor')return;const i=setInterval(()=>setSn(Math.floor((Date.now()-t0.current)/1000)),500);return()=>clearInterval(i);},[d]);
@@ -10,7 +10,7 @@ export default function SesliDeneme({benim=false,tok=null,kisa=false,ayar=null,o
  useEffect(()=>{kutu.current&&(kutu.current.scrollTop=kutu.current.scrollHeight);},[yazi]);
  const basla=async()=>{if(d==='konusuyor'||d==='baglaniyor'){try{vr.current?.stop();}catch{}setD('bitti');return;}
   setHata('');setYazi([]);setD('baglaniyor');
-  try{const r=await fetch('/api/demo'+(benim?'?benim=1':''),{headers:tok?{authorization:'Bearer '+await tok()}:{}});const j=await r.json();if(!r.ok)throw new Error(j.error||'Bağlantı hatası');setAd(j.ad||'');
+  try{const r=await fetch('/api/demo'+(benim?'?benim=1':sektor?'?s='+encodeURIComponent(sektor):''),{headers:tok?{authorization:'Bearer '+await tok()}:{}});const j=await r.json();if(!r.ok)throw new Error(j.error||'Bağlantı hatası');setAd(j.ad||'');
    const {default:Vapi}=await import('@vapi-ai/web');const vapi=new Vapi(j.publicKey);vr.current=vapi;
    vapi.on('call-start',()=>{t0.current=Date.now();setSn(0);setD('konusuyor');});
    vapi.on('call-end',()=>{setD('bitti');setV(1);});

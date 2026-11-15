@@ -24,7 +24,7 @@ export default function Entegrasyonlar({tok}){
    <label>Test e-posta<input value={f.adres} onChange={e=>setF({...f,adres:e.target.value})} placeholder="ornek@mail.com"/></label><button className="g" disabled={!d.durum.eposta} onClick={()=>is({islem:'eposta_test',adres:f.adres})}>Test e-posta</button></div>
   <h3 style={{marginTop:14}}>Canlı demo ve şablon asistan</h3>
   <div className="frm"><label>Şablon asistan ID<input value={f.sablon??(d.sablon||'')} onChange={e=>setF({...f,sablon:e.target.value.trim()})} placeholder="Vapi asistan kimliği (boş = ilk işletmeninki)"/></label><button className="g" onClick={()=>is({islem:'sablon',id:f.sablon})}>Kaydet</button>
-   <button onClick={()=>is({islem:'demo_kur'})}>{d.demoId?'Demo asistanını güncelle':'Demo asistanını kur'}</button></div>
+   <button onClick={()=>is({islem:'demo_kur'})}>{d.demoId?`Demo asistanlarını güncelle (${d.demoId})`:'Demo asistanlarını kur'}</button></div>
   <h3 style={{marginTop:14}}>İşletmeye mesaj kanalı bağla</h3>
   <div className="frm"><label>İşletme ID<input value={f.business_id} onChange={e=>setF({...f,business_id:e.target.value.trim()})} placeholder="işletmenin uuid'si"/></label>
    <label>Kanal<select value={f.tur} onChange={e=>setF({...f,tur:e.target.value})}><option value="whatsapp">WhatsApp (Phone number ID)</option><option value="instagram">Instagram (hesap ID)</option></select></label>

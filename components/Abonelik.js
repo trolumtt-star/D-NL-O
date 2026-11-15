@@ -6,10 +6,11 @@ const kalanGun=t=>Math.max(0,Math.ceil((new Date(t)-Date.now())/864e5));
 function PaketAl({tok,b,kapat,ilk}){
  const [s,setS]=useState({id:ilk?.paket||'m',all:!!ilk?.all,yil:!!ilk?.yil}),[kur,setKur]=useState(null),[bi,setBi]=useState({ad:'',soyad:'',eposta:b.email||'',tel:String(b.phone_number||'').replace(/\D/g,'').slice(-10)}),
   [adim,setAdim]=useState(1),[busy,setBusy]=useState(false),[hata,setHata]=useState(''),[kod,setKod]=useState(null),[link,setLink]=useState(null),[iban,setIban]=useState(null),[bitti,setBitti]=useState(false);
- useEffect(()=>{fetch('/api/kur').then(r=>r.json()).then(setKur).catch(()=>{});try{const x=JSON.parse(localStorage.getItem('dinlio_odeme_bilgi')||'null');if(x)setBi(o=>({...o,...x}));}catch{}},[]);
+ const [nu,setNu]=useState(0),kirala=b.settings?.satin_al?.numara?.tercih==='kirala'||b.settings?.numara?.tip==='0850';
+ useEffect(()=>{fetch('/api/kur').then(r=>r.json()).then(setKur).catch(()=>{});if(kirala)fetch('/api/kayit').then(r=>r.json()).then(j=>setNu(j.numara?.ucret||0)).catch(()=>{});try{const x=JSON.parse(localStorage.getItem('dinlio_odeme_bilgi')||'null');if(x)setBi(o=>({...o,...x}));}catch{}},[]);
  const api=async body=>{const r=await fetch('/api/dakika',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+await tok()},body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.error||'Hata');return j;};
  useEffect(()=>{if(!kod||bitti)return;const t=setInterval(async()=>{try{const r=await api({islem:'durum',kod});if(r.durum==='odendi'){setBitti(true);clearInterval(t);}}catch{}},5000);return()=>clearInterval(t);},[kod,bitti]);
- const p=paketFiyat({id:s.id,all:s.all,yil:s.yil,ilkAy:!b.settings?.abonelik}),kdv=kur?.kdv??.2,top=kur?.usd?p.usd*kur.usd*(1+kdv):null;
+ const p=paketFiyat({id:s.id,all:s.all,yil:s.yil,ilkAy:!b.settings?.abonelik}),kdv=kur?.kdv??.2,nTl=kirala?nu*(s.yil?12:1):0,top=kur?.usd?(p.usd*kur.usd+nTl)*(1+kdv):null;
  const ok=bi.ad.trim().length>=2&&bi.soyad.trim().length>=2&&/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(bi.eposta)&&/^5\d{9}$/.test(bi.tel.replace(/\D/g,'').slice(-10));
  const ode=async yontem=>{setBusy(true);setHata('');try{localStorage.setItem('dinlio_odeme_bilgi',JSON.stringify(bi));}catch{}const pen=yontem==='shopier'?window.open('about:blank','_blank'):null;
   try{const j=await api({tur:'paket',paket:s.id,all:s.all,yil:s.yil,yontem,alici:{...bi,tel:bi.tel.replace(/\D/g,'').slice(-10)}});
@@ -19,7 +20,7 @@ function PaketAl({tok,b,kapat,ilk}){
   <div style={{width:'min(600px,100%)',maxHeight:'calc(100dvh - 32px)',overflowY:'auto',position:'relative',background:'#0e0e10',border:'1px solid rgba(255,255,255,.14)',borderRadius:22,padding:'24px 20px',boxShadow:'0 30px 90px -20px #000,0 0 0 1px rgba(255,31,61,.15)'}}>
    <button className="g" onClick={kapat} aria-label="Kapat" style={{position:'absolute',right:12,top:12,padding:'4px 10px'}}>✕</button>
    <h2 style={{marginRight:40}}>{bitti?'Paketin başladı 🎉':'Paketini seç'}</h2>
-   {bitti?<><p style={{marginTop:10}}>Ödemen alındı, <b>{p.ad}</b> paketin aktif. Telefon numaranı bağlamak için seninle iletişime geçeceğiz.</p><button style={{marginTop:14}} onClick={()=>location.reload()}>Tamam</button></>
+   {bitti?<><p style={{marginTop:10}}>Ödemen alındı, <b>{p.ad}</b> paketin aktif. Asistanın kuruluyor ve hattın bağlanıyor; ne yapman gerektiği (yönlendirme kodu ya da yeni numaran) birkaç dakika içinde bildirimlerine düşecek.</p><button style={{marginTop:14}} onClick={()=>location.reload()}>Tamam</button></>
    :adim===1?<>
     <div className="row" style={{gap:8,justifyContent:'flex-start',flexWrap:'wrap',margin:'12px 0'}}>
      <button className={s.all?'g':''} onClick={()=>setS({...s,all:false})}>Çağrı</button><button className={s.all?'':'g'} onClick={()=>setS({...s,all:true})}>All in one</button>
@@ -28,6 +29,7 @@ function PaketAl({tok,b,kapat,ilk}){
      <b style={{display:'block'}}>{x.ad}</b><span style={{fontSize:'.8rem',opacity:.8}}>{x.dk} dk / ay</span><b style={{display:'block',fontSize:'1.15rem',marginTop:4}}>${f.usd}{s.yil?' / yıl':' / ay'}</b>{f.aciklama.includes('ilk ay')&&<span style={{fontSize:'.72rem'}}>ilk ay fiyatı</span>}</button>;})}</div>
     <div style={{padding:12,borderRadius:12,background:'var(--soft)',border:'1px solid var(--line)',marginTop:12}}>
      <div className="row"><span className="mut">{p.aciklama}</span><span>${p.usd}</span></div>
+     {nTl>0&&<div className="row"><span className="mut">0850 numara kirası ({s.yil?'12 ay':'1 ay'})</span><span>{tl(nTl)}</span></div>}
      {top&&<><div className="row"><span className="mut">TL karşılığı (kur {kur.usd.toLocaleString('tr-TR')}){kdv?` + KDV %${Math.round(kdv*100)}`:''}</span><b style={{fontSize:'1.2rem'}}>{tl(top)}</b></div></>}</div>
     <button style={{marginTop:14,width:'100%'}} onClick={()=>setAdim(2)}>Devam</button></>
    :adim===2?<><p className="mut" style={{margin:'8px 0'}}>Fatura ve ödeme sayfası için bilgilerin:</p>
@@ -43,9 +45,12 @@ function PaketAl({tok,b,kapat,ilk}){
 export default function Abonelik({b,tok}){
  const [ac,setAc]=useState(false),[dene,setDene]=useState(false);const s=b.settings||{},dn=s.deneme,ab=s.abonelik;
  useEffect(()=>{const f=()=>setAc(true);window.addEventListener('paketal',f);return()=>window.removeEventListener('paketal',f);},[]);
+ const sa=s.satin_al;useEffect(()=>{if(sa&&!ab&&new URLSearchParams(location.search).get('ode')){setAc(true);history.replaceState(null,'',location.pathname);}},[]);
  const kartS={border:'1px solid rgba(255,31,61,.45)',background:'radial-gradient(120% 140% at 100% 0%,rgba(255,31,61,.18),transparent 60%)'};
  return <>
-  {!b.vapi_assistant_id&&<div className="card" style={kartS}><h2>Asistanını kur ✨</h2><p className="mut" style={{margin:'6px 0 12px'}}>İşini birkaç cümleyle anlat, yapay zekâ sorular sorarak asistanını hazırlasın. 3 dakika sürer.</p><a className="lb" href="/kurulum">Kuruluma başla</a></div>}
+  {!b.vapi_assistant_id&&!sa&&<div className="card" style={kartS}><h2>Asistanını kur ✨</h2><p className="mut" style={{margin:'6px 0 12px'}}>İşini birkaç cümleyle anlat, yapay zekâ sorular sorarak asistanını hazırlasın. 3 dakika sürer.</p><a className="lb" href="/kurulum">Kuruluma başla</a></div>}
+  {sa&&!ab&&<div className="card" style={{border:'1px solid rgba(255,31,61,.8)',background:'radial-gradient(120% 140% at 100% 0%,rgba(255,31,61,.28),transparent 60%)'}}><div className="row" style={{flexWrap:'wrap',gap:10}}><div><h2>Son adım: ödemeni tamamla</h2>
+   <p className="mut">Bilgilerin hazır. Kartla ödediğin an asistanın formdaki bilgilerle kurulacak{sa.numara?.tercih==='kirala'?', 0850 numaran bağlanacak':' ve numaranı yönlendireceğin hat verilecek'}.</p></div><button onClick={()=>setAc(true)} style={{fontSize:'1.05rem',padding:'12px 22px'}}>💳 Kartla öde</button></div></div>}
   {dn&&!ab&&!s.kurulum_onay&&<div className="card" style={{border:'1px solid rgba(255,196,0,.45)',background:'radial-gradient(120% 140% at 100% 0%,rgba(255,196,0,.14),transparent 60%)'}}><h2>⏳ Ücretsiz hesabınızın kurulumu 24 saat içinde tamamlanacaktır</h2>
    <p className="mut" style={{marginTop:6}}>Ekibimiz hesabını kontrol edip asistanını hazır hâle getiriyor. Kurulum bitince sana bildirim gelecek. Bu arada asistanına işletmeni anlatabilir ve tarayıcıdan konuşarak deneyebilirsin.</p></div>}
   {dn&&!ab&&(()=>{const kDk=Math.max(0,(b.quota_minutes_total||0)+(b.ek_dakika||0)-Math.ceil((b.quota_seconds_used||0)/60)),kG=kalanGun(dn.bitis),bitti=kG<=0||kDk<=0||b.status==='suspended';
@@ -56,4 +61,4 @@ export default function Abonelik({b,tok}){
   {ab&&kalanGun(ab.bitis)<=5&&<div className="card" style={kartS}><div className="row" style={{flexWrap:'wrap',gap:10}}><div><h2>{kalanGun(ab.bitis)>0?`Paketin ${kalanGun(ab.bitis)} gün sonra bitiyor`:'Paketinin süresi doldu'}</h2><p className="mut">Asistanın kesintisiz çalışsın diye paketini yenile.</p></div><button onClick={()=>setAc(true)}>Yenile</button></div></div>}
   {b.vapi_assistant_id&&b.status!=='suspended'&&<div className="card"><div className="row" style={{flexWrap:'wrap',gap:10}}><div><h2>Asistanını dene</h2><p className="mut">Telefonu beklemeden tarayıcıdan konuş{!b.vapi_phone_id?'. Telefon numaran paket alındıktan sonra bağlanır':''}.</p></div>
    <div className="row" style={{gap:8}}><a className="lb g" href="/kurulum">Bilgileri güncelle</a><button onClick={()=>setDene(!dene)}>{dene?'Kapat':'🎙 Konuş'}</button></div></div>{dene&&<div style={{marginTop:6}}><SesliDeneme benim tok={tok} kisa/></div>}</div>}
-  {ac&&<PaketAl tok={tok} b={b} ilk={dn} kapat={()=>setAc(false)}/>}</>;}
+  {ac&&<PaketAl tok={tok} b={b} ilk={sa||dn} kapat={()=>setAc(false)}/>}</>;}

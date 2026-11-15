@@ -94,3 +94,14 @@
 @media(max-width:640px){.by-kpis{grid-template-columns:repeat(2,1fr)}.by-buyuk{text-align:left}}
 .by-izin{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 6px;padding:12px;border-radius:12px;background:rgba(255,255,255,.04)}
 .by-bek{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-top:1px solid rgba(255,255,255,.07)}
+/* Satın alma */
+.sa-pk{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.sa-pk button,.sa-num button{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:3px;padding:14px 12px;border-radius:16px;border:1px solid var(--rule);background:rgba(255,255,255,.03);transition:border-color .2s,box-shadow .2s,transform .15s}
+.sa-pk button:hover,.sa-num button:hover{transform:translateY(-1px)}
+.sa-pk button.secili,.sa-num button.secili{border-color:var(--red);box-shadow:0 0 0 1px var(--red),0 10px 30px -14px rgba(255,31,61,.8);background:var(--redSoft)}
+.sa-pk small,.sa-num small{color:var(--mute);font-size:.78rem;line-height:1.35}.sa-pk strong{font-size:1.3rem;margin-top:4px}.sa-pk strong i{font-style:normal;font-size:.75rem;color:var(--mute);margin-left:2px}
+.sa-num{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 4px}
+.sa-iki{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sa-ozet{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:16px 0 4px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid var(--rule)}
+.sa-ozet span{color:var(--ink2);font-size:.9rem}.sa-ozet small{color:var(--mute);font-weight:500}
+@media(max-width:560px){.sa-pk{grid-template-columns:repeat(2,1fr)}.sa-num{grid-template-columns:1fr}}

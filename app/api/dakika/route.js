@@ -1,5 +1,5 @@
 import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {requireOwner} from '@/lib/owner';
-import {usdKur} from '@/lib/kur';import {kdvOrani} from '@/lib/sistem';import {birim,fiyat,SECENEK,EN_AZ,EN_COK} from '@/lib/ekdakika';import {shopierForm} from '@/lib/shopier';import {patVar,urunAc,odemeleriKontrol} from '@/lib/shopierPat';import {paketFiyat,tlHesap} from '@/lib/fiyatlar';
+import {usdKur} from '@/lib/kur';import {kdvOrani} from '@/lib/sistem';import {birim,fiyat,SECENEK,EN_AZ,EN_COK} from '@/lib/ekdakika';import {shopierForm} from '@/lib/shopier';import {patVar,urunAc,odemeleriKontrol} from '@/lib/shopierPat';import {paketFiyat,tlHesap} from '@/lib/fiyatlar';import {numaraAyar} from '@/lib/numara';
 export const dynamic='force-dynamic';
 const hata=(m,s=400)=>NextResponse.json({error:m},{status:s});
 const yeniKod=()=>'DN'+Date.now().toString(36).toUpperCase().slice(-6)+Math.random().toString(36).slice(2,6).toUpperCase();
@@ -28,10 +28,13 @@ export async function POST(req){try{const b=await requireOwner(req);const x=awai
  const al=x.alici||{},alici={ad:String(al.ad||'').trim().slice(0,40),soyad:String(al.soyad||'').trim().slice(0,40),eposta:String(al.eposta||'').trim().slice(0,120),tel:String(al.tel||'').replace(/\D/g,'').slice(-10)};
  if(alici.ad.length<2||alici.soyad.length<2||!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(alici.eposta)||!/^5\d{9}$/.test(alici.tel))return hata('Ad, soyad, e-posta ve cep telefonunu eksiksiz girin.');
  const [k,kd]=await Promise.all([usdKur(),kdvOrani()]);if(!k.usd)return hata('Döviz kuru şu an alınamadı, birkaç dakika sonra tekrar deneyin.',503);
- const bi=pk?{usd:Math.round(pk.usd/pk.dk*10000)/10000}:birim(b),f=pk?tlHesap(pk.usd,k.usd,kd):fiyat(dk,bi.usd,k.usd,kd),kod=yeniKod();
- const {error}=await adminSb.from('dakika_siparisleri').insert({kod,business_id:b.id,dakika:dk,birim_usd:bi.usd,usd:f.usd,kur:k.usd,tl_kdvsiz:f.tl_kdvsiz,kdv:f.kdv,toplam_tl:f.toplam_tl,yontem,tur,alici,...(pk?{paket:{id:pk.id,all:pk.all,yil:pk.yil,ad:pk.aciklama}}:{})});if(error)throw error;
+ const bi=pk?{usd:Math.round(pk.usd/pk.dk*10000)/10000}:birim(b);let f=pk?tlHesap(pk.usd,k.usd,kd):fiyat(dk,bi.usd,k.usd,kd);const kod=yeniKod();
+ // Kiralık 0850 numara: paketle birlikte aylık ücret (yıllıkta 12 ay) eklenir
+ let numaraTl=0;if(pk&&(b.settings?.satin_al?.numara?.tercih==='kirala'||b.settings?.numara?.tip==='0850')){const {ucret}=await numaraAyar();numaraTl=ucret*(pk.yil?12:1);
+  if(numaraTl){const t=Math.round((f.tl_kdvsiz+numaraTl)*100)/100,kv=Math.round(t*kd*100)/100;f={...f,tl_kdvsiz:t,kdv:kv,toplam_tl:Math.round((t+kv)*100)/100,numara_tl:numaraTl};}}
+ const {error}=await adminSb.from('dakika_siparisleri').insert({kod,business_id:b.id,dakika:dk,birim_usd:bi.usd,usd:f.usd,kur:k.usd,tl_kdvsiz:f.tl_kdvsiz,kdv:f.kdv,toplam_tl:f.toplam_tl,yontem,tur,alici,...(pk?{paket:{id:pk.id,all:pk.all,yil:pk.yil,ad:pk.aciklama+(numaraTl?' + 0850 numara':''),numara_tl:numaraTl||undefined}}:{})});if(error)throw error;
  if(yontem==='iban')return NextResponse.json({kod,...f,iban:process.env.ODEME_IBAN,ad:process.env.ODEME_AD||'',banka:process.env.ODEME_BANKA||''});
- if(patVar()){const baslik=pk?`Dinlio AI ${pk.aciklama}`:tur==='asim'?`Dinlio AI ${dk} dk aşım ücreti`:`Dinlio AI ${dk} ek dakika`;
+ if(patVar()){const baslik=pk?`Dinlio AI ${pk.aciklama}${numaraTl?' + 0850 numara':''}`:tur==='asim'?`Dinlio AI ${dk} dk aşım ücreti`:`Dinlio AI ${dk} ek dakika`;
   try{const u=await urunAc({kod,baslik,toplam:f.toplam_tl});await adminSb.from('dakika_siparisleri').update({odeme_ref:u.id}).eq('kod',kod);return NextResponse.json({kod,...f,link:u.url});}
   catch(e){await adminSb.from('dakika_siparisleri').update({durum:'iptal'}).eq('kod',kod);throw e;}}
  return NextResponse.json({kod,...f,form:shopierForm({kod,toplam:f.toplam_tl,urun:pk?`Dinlio AI ${pk.aciklama}`:tur==='asim'?`Dinlio AI ${dk} dk aşım ücreti`:`Dinlio AI ${dk} ek dakika`,b,alici})});}
