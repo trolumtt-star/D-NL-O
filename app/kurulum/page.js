@@ -22,7 +22,7 @@ export default function Kurulum(){
  return <div className="ks"><div className="ks-w ks-sohbet" style={{paddingBottom:0}}>
   <div className="ks-top" style={{marginBottom:10}}><span className="ks-logo"><i>🎙</i><span>Asistanını <b>kur</b></span></span><a href="/panel" style={{color:'var(--mute)',fontSize:'.85rem'}}>Sonra</a></div>
   <div className="ks-ilerle"><i style={{width:Math.max(4,d.ilerleme||0)+'%'}}/></div>
-  <div className="ks-akis" ref={akis}>{d.mesajlar.map((x,i)=><div key={i} className={'ks-m '+x.r}>{x.m}</div>)}{busy==='soru'&&<div className="ks-yaziyor"><i/><i/><i/></div>}
+  <div className="ks-akis" ref={akis}>{d.mesajlar.map((x,i)=><div key={i} className={'ks-m '+x.r}>{x.m}</div>)}{busy==='soru'&&<div className="ks-yaziyor"><i/><i/><i/>{d.bitti||d.mesajlar.length>=8?<span style={{marginLeft:8,fontSize:'.8rem',color:'var(--mute)'}}>asistanın hazırlanıyor olabilir, 30 sn sürebilir…</span>:null}</div>}
    {d.bitti&&<div className="ks-kart" style={{marginTop:6}}><b>Bilgiler tamam.</b><p className="ks-alt" style={{margin:'6px 0 0'}}>Asistanın bu bilgilerle kurulacak. İstersen yazmaya devam edip bir şey ekleyebilirsin.</p>
     <button className="ks-btn" disabled={busy==='olustur'} onClick={olustur}>{busy==='olustur'?'Asistanın oluşturuluyor… (30 sn kadar)':'✨ Asistanımı oluştur'}</button></div>}
    {!d.bitti&&d.mesajlar.length>=6&&<button className="ks-btn g" style={{marginTop:4}} disabled={!!busy} onClick={olustur}>{busy==='olustur'?'Oluşturuluyor…':'Bu kadarı yeter, asistanımı oluştur'}</button>}

@@ -37,4 +37,16 @@ export async function POST(req){try{const b=await requireOwner(req);const x=awai
  if(mesaj==null&&k.mesajlar.length)return NextResponse.json(durum(b));
  const d=await soru(b,v,k,mesaj);
  const yk={...k,mesajlar:[...k.mesajlar,...(mesaj?[{r:'u',m:mesaj}]:[]),{r:'a',m:String(d.cevap).slice(0,2000)}],bilgi:d.bilgi||k.bilgi,bitti:!!d.bitti,ilerleme:Math.max(0,Math.min(100,+d.ilerleme||0))};
+ // OTOMATİK KURULUM: bot bilgileri tamamladığı an asistan Vapi'de kurulur; kurulduktan sonra yeni bilgi gelirse asistan güncellenir.
+ // Günde en fazla 15 otomatik kurulum/güncelleme (Vapi'yi gereksiz yormamak için).
+ const gun=new Date().toISOString().slice(0,10),on=k.oto?.gun===gun?k.oto.n:0,kurulu=!!(b.vapi_assistant_id&&k.tamam),
+  bilgiDegisti=JSON.stringify(d.bilgi||{})!==JSON.stringify(k.bilgi||{});
+ if(yk.bitti&&Object.keys(yk.bilgi||{}).length&&on<15&&(!kurulu||bilgiDegisti)){
+  yk.oto={gun,n:on+1};await kaydet(yk);
+  try{await asistanOlustur(b.id);const {data:g}=await adminSb.from('businesses').select('*').eq('id',b.id).single();const kk=g.settings?.kurulum||yk;
+   kk.mesajlar=[...(kk.mesajlar||yk.mesajlar),{r:'a',m:kurulu?'✅ Asistanın bu bilgilerle güncellendi.':'✅ Asistanın hazır! Verdiğin bilgilerle kuruldu, hemen konuşarak deneyebilirsin.'}];
+   await kaydet(kk);return NextResponse.json(durum({...g,settings:{...g.settings,kurulum:kk}}));}
+  catch(e){yk.mesajlar=[...yk.mesajlar,{r:'a',m:'⚠ Asistanını kurarken bir sorun oldu, birazdan "Asistanımı oluştur" ile tekrar dene.'}];await kaydet(yk);
+   try{await adminSb.from('webhook_events').insert({type:'kurulum_hata',business_id:b.id,payload:{hata:String(e.message).slice(0,300)}});}catch{}
+   return NextResponse.json(durum({...b,settings:{...b.settings,kurulum:yk}}));}}
  await kaydet(yk);return NextResponse.json(durum({...b,settings:{...b.settings,kurulum:yk}}));}catch(e){return hata(e.message,e.message==='Giriş gerekli'?401:400);}}
