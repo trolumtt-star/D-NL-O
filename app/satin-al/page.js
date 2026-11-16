@@ -1,13 +1,16 @@
 'use client';
 // PAKET SATIN ALMA: 1) paket + numara tercihi  2) işletme bilgileri (asistan bunlarla otomatik kurulur)  3) hesap.
 // Hesap açılınca panele geçilir, ödeme penceresi kendiliğinden açılır; ödeme onaylanınca asistan kurulur ve hat bağlanır.
-import {useEffect,useState} from 'react';import '@/components/ks.css';import {sb} from '@/lib/supabase';import {PK,paketFiyat} from '@/lib/fiyatlar';
+import {useEffect,useState} from 'react';import '@/components/ks.css';import SifreGucu from '@/components/SifreGucu';import {sifreKontrol} from '@/lib/sifre';import {sb} from '@/lib/supabase';import {useGoogleOturum,GoogleButon,GoogleBagli} from '@/components/GoogleKayit';import {PK,paketFiyat} from '@/lib/fiyatlar';
 const GUN=['','Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
 export default function SatinAl(){
  const [s,setS]=useState(null),[ad,setAd]=useState(1),[p,setP]=useState({id:'m',all:false,yil:false}),[n,setN]=useState({tercih:'kendi',mevcut:''}),
   [b,setB]=useState({isletme:'',sektor:'',liste:'',acilis:'09:00',kapanis:'22:00',kapali:[],adres:'',lat:null,lng:null,teslimat:true,km:'3',teslimat_ucret:'',min_siparis:'',personel:'',sure_dk:'30',asistan_adi:'',notlar:''}),
   [h,setH]=useState({ad:'',tel:'',eposta:'',sifre:'',kvkk:false,web:''}),[busy,setBusy]=useState(false),[err,setErr]=useState('');
- useEffect(()=>{const u=new URLSearchParams(location.search);setP({id:PK.some(x=>x.id===u.get('paket'))?u.get('paket'):'m',all:u.get('all')==='1',yil:u.get('yil')==='1'});
+ const [g,gCik]=useGoogleOturum();
+ useEffect(()=>{try{const k=JSON.parse(sessionStorage.getItem('satin_form')||'null');if(k&&new URLSearchParams(location.search).get('g')){setP(k.p);setN(k.n);setB(k.b);setH(x=>({...x,...k.h}));setAd(3);sessionStorage.removeItem('satin_form');}}catch{}},[]);
+ useEffect(()=>{if(g)setH(x=>({...x,ad:x.ad||g.ad,eposta:g.email}));},[g]);
+ useEffect(()=>{const u=new URLSearchParams(location.search);if(u.get('g'))return;setP({id:PK.some(x=>x.id===u.get('paket'))?u.get('paket'):'m',all:u.get('all')==='1',yil:u.get('yil')==='1'});
   fetch('/api/kayit').then(r=>r.json()).then(setS).catch(()=>{});},[]);
  const sek=(s?.sektorler||[]).find(x=>x.id===b.sektor),siparis=sek?.kind==='order',f=paketFiyat({id:p.id,all:p.all,yil:p.yil,ilkAy:true}),nu=s?.numara?.ucret||0;
  const ok1=n.tercih==='kirala'||!n.mevcut||/^0?[2-5]\d{9}$/.test(n.mevcut.replace(/\D/g,''));
@@ -16,8 +19,9 @@ export default function SatinAl(){
  const konumBul=()=>{if(!navigator.geolocation){setKb('Tarayıcın konumu desteklemiyor.');return;}setKb('Konum alınıyor…');navigator.geolocation.getCurrentPosition(async p=>{try{const r=await fetch(`/api/adres-bul?lat=${p.coords.latitude}&lng=${p.coords.longitude}`);const j=await r.json();if(!r.ok)throw new Error(j.error);setB(x=>({...x,adres:[j.adres,j.ilce,j.il].filter(Boolean).join(', '),lat:j.lat,lng:j.lng}));setKb('✓ Konumundan bulundu, yanlışsa düzelt.');}catch(e){setKb(e.message);}},()=>setKb('Konum izni verilmedi, adresi elle yaz.'),{enableHighAccuracy:true,timeout:15000});};
  const gonder=async e=>{e.preventDefault();setErr('');setBusy(true);
   try{const bilgi={...b,...(siparis?{personel:'',sure_dk:''}:{teslimat:undefined})};
-   const r=await fetch('/api/kayit',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({...h,isletme:b.isletme,sektor:b.sektor,satin:true,paket:p.id,all:p.all,yil:p.yil,numara:n,bilgi})});
+   const r=await fetch('/api/kayit',{method:'POST',headers:{'content-type':'application/json',...(g?{authorization:'Bearer '+g.token}:{})},body:JSON.stringify({...h,isletme:b.isletme,sektor:b.sektor,satin:true,paket:p.id,all:p.all,yil:p.yil,numara:n,bilgi})});
    const j=await r.json();if(!r.ok)throw new Error(j.error);
+   if(g){location.replace('/panel?ode=1');return;}
    const {error}=await sb.auth.signInWithPassword({email:h.eposta.trim().toLowerCase(),password:h.sifre});if(error)throw new Error('Hesap açıldı ama giriş yapılamadı, giriş sayfasından deneyin.');
    location.replace('/panel?ode=1');}catch(e2){setErr(e2.message||'Bir hata oldu.');setBusy(false);}};
  const Adim=()=><div className="ks-pills" style={{marginBottom:6}}>{['Paket','İşletme bilgileri','Hesap ve ödeme'].map((t,i)=><span key={t} className="ks-pill" style={ad===i+1?{borderColor:'var(--red)',color:'#fff'}:{opacity:.6}}>{i+1}. <b>{t}</b></span>)}</div>;
@@ -52,15 +56,16 @@ export default function SatinAl(){
    <p style={{color:'var(--mute)',fontSize:'.82rem',marginTop:8}}>Bunları sonra panelden ya da sohbetle istediğin zaman değiştirebilirsin.</p>
    <div className="sa-iki" style={{marginTop:12}}><button type="button" className="ks-btn g ni" onClick={()=>setAd(1)}>Geri</button><button type="button" className="ks-btn ni" disabled={!ok2} onClick={()=>setAd(3)}>Devam</button></div>
    {!ok2&&<p style={{color:'var(--mute)',fontSize:'.8rem',marginTop:8,textAlign:'center'}}>İşletme adı ve sektör gerekli; gerisini sonra da ekleyebilirsin</p>}</div>}
-  {ad===3&&<form className="ks-kart" onSubmit={gonder}>
+  {ad===3&&!g&&<div style={{marginBottom:12}}><GoogleButon donus="/satin-al?g=1" yazi="Google ile devam et" once={()=>{try{sessionStorage.setItem('satin_form',JSON.stringify({p,n,b,h:{ad:h.ad,tel:h.tel,kvkk:h.kvkk}}));}catch{}}}/></div>}
+  {ad===3&&<form className="ks-kart" onSubmit={gonder}>{g&&<GoogleBagli g={g} cik={gCik}/>}
    <label>Adın soyadın</label><input value={h.ad} onChange={e=>setH({...h,ad:e.target.value})} autoComplete="name" required/>
    <label>Cep telefonun</label><input value={h.tel} onChange={e=>setH({...h,tel:e.target.value})} inputMode="tel" autoComplete="tel" placeholder="05xx xxx xx xx" required/>
-   <label>E-posta</label><input type="email" value={h.eposta} onChange={e=>setH({...h,eposta:e.target.value})} autoComplete="email" required/>
-   <label>Şifre</label><input type="password" value={h.sifre} onChange={e=>setH({...h,sifre:e.target.value})} autoComplete="new-password" placeholder="En az 8 karakter, harf ve rakam" required/>
+   {!g&&<><label>E-posta</label><input type="email" value={h.eposta} onChange={e=>setH({...h,eposta:e.target.value})} autoComplete="email" required/>
+   <label>Şifre</label><input type="password" value={h.sifre} onChange={e=>setH({...h,sifre:e.target.value})} autoComplete="new-password" placeholder="En az 10 karakter: büyük/küçük harf, rakam, sembol" required/><SifreGucu sifre={h.sifre} eposta={h.eposta} ad={h.ad}/></>}
    <input tabIndex={-1} autoComplete="off" value={h.web} onChange={e=>setH({...h,web:e.target.value})} style={{position:'absolute',left:'-9999px',width:1,height:1,opacity:0}} aria-hidden="true"/>
    <label className="ks-ok"><input type="checkbox" checked={h.kvkk} onChange={e=>setH({...h,kvkk:e.target.checked})}/><span><a href="/yasal/kvkk" target="_blank">KVKK aydınlatma metnini</a> okudum, <a href="/yasal/sozlesme" target="_blank">hizmet sözleşmesini</a> kabul ediyorum.</span></label>
    {err&&<div className="ks-hata">{err}</div>}
    <div className="sa-ozet"><span>{f.aciklama}{n.tercih==='kirala'?' + yeni numara':' + kendi numaram'}</span><b>${f.usd} <small>+ KDV</small></b></div>
-   <div className="sa-iki"><button type="button" className="ks-btn g ni" onClick={()=>setAd(2)}>Geri</button><button className="ks-btn ni" disabled={busy||!h.kvkk}>{busy?'Hesabın açılıyor…':'Hesabı aç ve kartla öde'}</button></div>
+   <div className="sa-iki"><button type="button" className="ks-btn g ni" onClick={()=>setAd(2)}>Geri</button><button className="ks-btn ni" disabled={busy||!h.kvkk||(!g&&!sifreKontrol(h.sifre,{eposta:h.eposta,ad:h.ad}).gecerli)}>{busy?'Hesabın açılıyor…':'Hesabı aç ve kartla öde'}</button></div>
    <p style={{color:'var(--mute)',fontSize:'.8rem',marginTop:8,textAlign:'center'}}>🔒 Sonraki adımda güvenli ödeme sayfası açılır. Ödeme onaylanınca asistanın otomatik kurulur.</p></form>}
  </div></div>;}
