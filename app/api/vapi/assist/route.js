@@ -71,8 +71,9 @@ export async function POST(req){
      const g=(gec||[]).find(x=>x.customer_name);
      if(g){const ex=g.extracted||{};
       // Arayan numara taklit edilebildiği için geçmiş sipariş/şikayet sesli söylenmez; sadece asistanın bağlamına verilir.
-      vv.musteriAdi=g.customer_name;vv.sonIslem=String(g.orders||ex.service||ex.complaint||ex.interest||ex.issue||ex.reason||'').slice(0,60);vv.aramaSayisi=String((gec||[]).length);
+      vv.musteriAdi=g.customer_name;vv.sonIslem=String(g.orders||ex.service||ex.interest||ex.reason||'').slice(0,160);vv.aramaSayisi=String((gec||[]).length);
       ov.firstMessage=kap?`Hoş geldiniz ${g.customer_name}! ${biz.name||'İşletmemiz'} şu an kapalı ama ben buradayım; ${kayitCumle}. ${!st.tatil?.aktif&&st.working_hours?'Randevunuzu ayarlayayım mı?':'Talebinizi not alayım mı?'}`
+       :g.orders?`Merhaba ${g.customer_name}, tekrar hoş geldiniz! Ben ${biz.name||'işletmenin'} yapay zeka asistanı${ad?' '+ad:'yım'}, ${kayitCumle}. Her zamankinden mi hazırlayalım, yoksa bugün farklı bir şey mi?`
        :`Hoş geldiniz ${g.customer_name}, sizi yeniden duymak çok güzel! Ben ${biz.name||'işletmenin'} yapay zeka asistanı${ad?' '+ad:'yım'}, ${kayitCumle}. Bugün nasıl yardımcı olabilirim?`;}
    }catch{}}
    // SADAKAT ve KAMPANYA İZNİ: kaçıncı alışverişi olduğu kampanya değişkenine eklenir (asistan kesinleşince bir kez söyler)
