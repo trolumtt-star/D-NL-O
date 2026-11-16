@@ -30,7 +30,7 @@ export async function POST(req){try{const b=await requireOwner(req);const x=awai
  const [k,kd]=await Promise.all([usdKur(),kdvOrani()]);if(!k.usd)return hata('Döviz kuru şu an alınamadı, birkaç dakika sonra tekrar deneyin.',503);
  const bi=pk?{usd:Math.round(pk.usd/pk.dk*10000)/10000}:birim(b);let f=pk?tlHesap(pk.usd,k.usd,kd):fiyat(dk,bi.usd,k.usd,kd);const kod=yeniKod();
  // Kiralık 0850 numara: paketle birlikte aylık ücret (yıllıkta 12 ay) eklenir
- let numaraTl=0;if(pk&&(b.settings?.satin_al?.numara?.tercih==='kirala'||b.settings?.numara?.tip==='0850')){const {ucret}=await numaraAyar();numaraTl=ucret*(pk.yil?12:1);
+ let numaraTl=0;if(pk&&(b.settings?.satin_al?.numara?.tercih==='kirala')){const {ucret}=await numaraAyar();numaraTl=ucret*(pk.yil?12:1);
   if(numaraTl){const t=Math.round((f.tl_kdvsiz+numaraTl)*100)/100,kv=Math.round(t*kd*100)/100;f={...f,tl_kdvsiz:t,kdv:kv,toplam_tl:Math.round((t+kv)*100)/100,numara_tl:numaraTl};}}
  f=odemeDahil(f); // ödeme altyapısı maliyeti fiyatın içinde (ayrı kalem değil)
  const {error}=await adminSb.from('dakika_siparisleri').insert({kod,business_id:b.id,dakika:dk,birim_usd:bi.usd,usd:f.usd,kur:k.usd,tl_kdvsiz:f.tl_kdvsiz,kdv:f.kdv,toplam_tl:f.toplam_tl,yontem,tur,alici,...(pk?{paket:{id:pk.id,all:pk.all,yil:pk.yil,ad:pk.aciklama+(numaraTl?' + 0850 numara':''),numara_tl:numaraTl||undefined}}:{})});if(error)throw error;

@@ -6,7 +6,7 @@ const kalanGun=t=>Math.max(0,Math.ceil((new Date(t)-Date.now())/864e5));
 function PaketAl({tok,b,kapat,ilk}){
  const [s,setS]=useState({id:ilk?.paket||'m',all:!!ilk?.all,yil:!!ilk?.yil}),[kur,setKur]=useState(null),[bi,setBi]=useState({ad:'',soyad:'',eposta:b.email||'',tel:String(b.phone_number||'').replace(/\D/g,'').slice(-10)}),
   [adim,setAdim]=useState(1),[busy,setBusy]=useState(false),[hata,setHata]=useState(''),[kod,setKod]=useState(null),[link,setLink]=useState(null),[iban,setIban]=useState(null),[bitti,setBitti]=useState(false);
- const [nu,setNu]=useState(0),kirala=b.settings?.satin_al?.numara?.tercih==='kirala'||b.settings?.numara?.tip==='0850';
+ const [nu,setNu]=useState(0),kirala=b.settings?.satin_al?.numara?.tercih==='kirala';
  useEffect(()=>{fetch('/api/kur').then(r=>r.json()).then(setKur).catch(()=>{});if(kirala)fetch('/api/kayit').then(r=>r.json()).then(j=>setNu(j.numara?.ucret||0)).catch(()=>{});try{const x=JSON.parse(localStorage.getItem('dinlio_odeme_bilgi')||'null');if(x)setBi(o=>({...o,...x}));}catch{}},[]);
  const api=async body=>{const r=await fetch('/api/dakika',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+await tok()},body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.error||'Hata');return j;};
  useEffect(()=>{if(!kod||bitti)return;const t=setInterval(async()=>{try{const r=await api({islem:'durum',kod});if(r.durum==='odendi'){setBitti(true);clearInterval(t);}}catch{}},5000);return()=>clearInterval(t);},[kod,bitti]);
