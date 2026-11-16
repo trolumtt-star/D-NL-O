@@ -1,6 +1,6 @@
 'use client';
 // Panel: deneme süresi / abonelik durumu, kurulum çağrısı, asistanı tarayıcıdan deneme ve paket satın alma penceresi.
-import {useEffect,useState} from 'react';import {createPortal} from 'react-dom';import {PK,paketFiyat} from '@/lib/fiyatlar';import SesliDeneme from '@/components/SesliDeneme';
+import {useEffect,useState} from 'react';import {createPortal} from 'react-dom';import {PK,odemeDahil,paketFiyat} from '@/lib/fiyatlar';import SesliDeneme from '@/components/SesliDeneme';
 const tl=n=>n.toLocaleString('tr-TR',{style:'currency',currency:'TRY',maximumFractionDigits:2});
 const kalanGun=t=>Math.max(0,Math.ceil((new Date(t)-Date.now())/864e5));
 function PaketAl({tok,b,kapat,ilk}){
@@ -10,7 +10,7 @@ function PaketAl({tok,b,kapat,ilk}){
  useEffect(()=>{fetch('/api/kur').then(r=>r.json()).then(setKur).catch(()=>{});if(kirala)fetch('/api/kayit').then(r=>r.json()).then(j=>setNu(j.numara?.ucret||0)).catch(()=>{});try{const x=JSON.parse(localStorage.getItem('dinlio_odeme_bilgi')||'null');if(x)setBi(o=>({...o,...x}));}catch{}},[]);
  const api=async body=>{const r=await fetch('/api/dakika',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+await tok()},body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.error||'Hata');return j;};
  useEffect(()=>{if(!kod||bitti)return;const t=setInterval(async()=>{try{const r=await api({islem:'durum',kod});if(r.durum==='odendi'){setBitti(true);clearInterval(t);}}catch{}},5000);return()=>clearInterval(t);},[kod,bitti]);
- const p=paketFiyat({id:s.id,all:s.all,yil:s.yil,ilkAy:!b.settings?.abonelik}),kdv=kur?.kdv??.2,nTl=kirala?nu*(s.yil?12:1):0,top=kur?.usd?(p.usd*kur.usd+nTl)*(1+kdv):null;
+ const p=paketFiyat({id:s.id,all:s.all,yil:s.yil,ilkAy:!b.settings?.abonelik}),kdv=kur?.kdv??.2,nTl=kirala?nu*(s.yil?12:1):0,top=kur?.usd?odemeDahil({tl_kdvsiz:p.usd*kur.usd+nTl,kdv:(p.usd*kur.usd+nTl)*kdv,toplam_tl:(p.usd*kur.usd+nTl)*(1+kdv)}).toplam_tl:null;
  const ok=bi.ad.trim().length>=2&&bi.soyad.trim().length>=2&&/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(bi.eposta)&&/^5\d{9}$/.test(bi.tel.replace(/\D/g,'').slice(-10));
  const ode=async yontem=>{setBusy(true);setHata('');try{localStorage.setItem('dinlio_odeme_bilgi',JSON.stringify(bi));}catch{}const pen=yontem==='shopier'?window.open('about:blank','_blank'):null;
   try{const j=await api({tur:'paket',paket:s.id,all:s.all,yil:s.yil,yontem,alici:{...bi,tel:bi.tel.replace(/\D/g,'').slice(-10)}});
@@ -30,7 +30,7 @@ function PaketAl({tok,b,kapat,ilk}){
     <div style={{padding:12,borderRadius:12,background:'var(--soft)',border:'1px solid var(--line)',marginTop:12}}>
      <div className="row"><span className="mut">{p.aciklama}</span><span>${p.usd}</span></div>
      {nTl>0&&<div className="row"><span className="mut">0850 numara kirası ({s.yil?'12 ay':'1 ay'})</span><span>{tl(nTl)}</span></div>}
-     {top&&<><div className="row"><span className="mut">TL karşılığı (kur {kur.usd.toLocaleString('tr-TR')}){kdv?` + KDV %${Math.round(kdv*100)}`:''}</span><b style={{fontSize:'1.2rem'}}>{tl(top)}</b></div></>}</div>
+     {top&&<><div className="row"><span className="mut">Ödenecek tutar{kdv?' (KDV dahil)':''} · kur {kur.usd.toLocaleString('tr-TR')}</span><b style={{fontSize:'1.2rem'}}>{tl(top)}</b></div></>}</div>
     <button style={{marginTop:14,width:'100%'}} onClick={()=>setAdim(2)}>Devam</button></>
    :adim===2?<><p className="mut" style={{margin:'8px 0'}}>Fatura ve ödeme sayfası için bilgilerin:</p>
     <div className="frm">{[['ad','Ad'],['soyad','Soyad'],['eposta','E-posta'],['tel','Cep telefonu']].map(([k,l])=><label key={k}>{l}<input value={bi[k]} onChange={e=>setBi({...bi,[k]:e.target.value})} inputMode={k==='tel'?'tel':undefined}/></label>)}</div>

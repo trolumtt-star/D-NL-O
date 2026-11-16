@@ -1,5 +1,5 @@
 import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {requireOwner} from '@/lib/owner';
-import {usdKur} from '@/lib/kur';import {kdvOrani} from '@/lib/sistem';import {birim,fiyat,SECENEK,EN_AZ,EN_COK} from '@/lib/ekdakika';import {shopierForm} from '@/lib/shopier';import {patVar,urunAc,odemeleriKontrol} from '@/lib/shopierPat';import {paketFiyat,tlHesap} from '@/lib/fiyatlar';import {numaraAyar} from '@/lib/numara';
+import {usdKur} from '@/lib/kur';import {kdvOrani} from '@/lib/sistem';import {birim,fiyat,SECENEK,EN_AZ,EN_COK} from '@/lib/ekdakika';import {shopierForm} from '@/lib/shopier';import {patVar,urunAc,odemeleriKontrol} from '@/lib/shopierPat';import {paketFiyat,tlHesap,odemeDahil} from '@/lib/fiyatlar';import {numaraAyar} from '@/lib/numara';
 export const dynamic='force-dynamic';
 const hata=(m,s=400)=>NextResponse.json({error:m},{status:s});
 const yeniKod=()=>'DN'+Date.now().toString(36).toUpperCase().slice(-6)+Math.random().toString(36).slice(2,6).toUpperCase();
@@ -7,8 +7,8 @@ const borc=b=>Math.max(0,Math.ceil(((b.quota_seconds_used||0)-((b.quota_minutes_
 export async function GET(req){try{let b=await requireOwner(req);
  if(patVar()){const r=await odemeleriKontrol({businessId:b.id}).catch(()=>null);if(r?.eklenen)b=await requireOwner(req);}const [k,kd]=await Promise.all([usdKur(),kdvOrani()]),bi=birim(b),bd=borc(b);
  const {data:sp}=await adminSb.from('dakika_siparisleri').select('kod,dakika,toplam_tl,yontem,durum,tur,created_at,paid_at').eq('business_id',b.id).order('created_at',{ascending:false}).limit(8);
- return NextResponse.json({birim:bi,kur:k,kdv:kd,secenekler:k.usd?SECENEK.map(d=>fiyat(d,bi.usd,k.usd,kd)):[],enAz:EN_AZ,enCok:EN_COK,
-  shopier:patVar()||!!(process.env.SHOPIER_API_KEY&&process.env.SHOPIER_API_SECRET),iban:!!process.env.ODEME_IBAN,siparisler:sp||[],asim:{acik:!!b.settings?.asim?.acik,limit_dk:b.settings?.asim?.limit_dk||0,borcDk:bd,borc:bd&&k.usd?fiyat(bd,bi.usd,k.usd,kd):null,son:b.settings?.asim_son||null}});}
+ return NextResponse.json({birim:bi,kur:k,kdv:kd,secenekler:k.usd?SECENEK.map(d=>odemeDahil(fiyat(d,bi.usd,k.usd,kd))):[],enAz:EN_AZ,enCok:EN_COK,
+  shopier:patVar()||!!(process.env.SHOPIER_API_KEY&&process.env.SHOPIER_API_SECRET),iban:!!process.env.ODEME_IBAN,siparisler:sp||[],asim:{acik:!!b.settings?.asim?.acik,limit_dk:b.settings?.asim?.limit_dk||0,borcDk:bd,borc:bd&&k.usd?odemeDahil(fiyat(bd,bi.usd,k.usd,kd)):null,son:b.settings?.asim_son||null}});}
  catch(e){return hata(e.message,401);}}
 export async function POST(req){try{const b=await requireOwner(req);const x=await req.json();
  if(x.islem==='durum'){if(patVar())await odemeleriKontrol({businessId:b.id,kod:String(x.kod||'')}).catch(()=>null);const {data:o}=await adminSb.from('dakika_siparisleri').select('durum').eq('kod',String(x.kod||'')).eq('business_id',b.id).maybeSingle();return NextResponse.json({durum:o?.durum||null});}
@@ -32,6 +32,7 @@ export async function POST(req){try{const b=await requireOwner(req);const x=awai
  // Kiralık 0850 numara: paketle birlikte aylık ücret (yıllıkta 12 ay) eklenir
  let numaraTl=0;if(pk&&(b.settings?.satin_al?.numara?.tercih==='kirala'||b.settings?.numara?.tip==='0850')){const {ucret}=await numaraAyar();numaraTl=ucret*(pk.yil?12:1);
   if(numaraTl){const t=Math.round((f.tl_kdvsiz+numaraTl)*100)/100,kv=Math.round(t*kd*100)/100;f={...f,tl_kdvsiz:t,kdv:kv,toplam_tl:Math.round((t+kv)*100)/100,numara_tl:numaraTl};}}
+ f=odemeDahil(f); // ödeme altyapısı maliyeti fiyatın içinde (ayrı kalem değil)
  const {error}=await adminSb.from('dakika_siparisleri').insert({kod,business_id:b.id,dakika:dk,birim_usd:bi.usd,usd:f.usd,kur:k.usd,tl_kdvsiz:f.tl_kdvsiz,kdv:f.kdv,toplam_tl:f.toplam_tl,yontem,tur,alici,...(pk?{paket:{id:pk.id,all:pk.all,yil:pk.yil,ad:pk.aciklama+(numaraTl?' + 0850 numara':''),numara_tl:numaraTl||undefined}}:{})});if(error)throw error;
  if(yontem==='iban')return NextResponse.json({kod,...f,iban:process.env.ODEME_IBAN,ad:process.env.ODEME_AD||'',banka:process.env.ODEME_BANKA||''});
  if(patVar()){const baslik=pk?`Dinlio AI ${pk.aciklama}${numaraTl?' + 0850 numara':''}`:tur==='asim'?`Dinlio AI ${dk} dk aşım ücreti`:`Dinlio AI ${dk} ek dakika`;
