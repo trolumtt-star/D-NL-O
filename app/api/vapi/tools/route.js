@@ -91,6 +91,15 @@ export async function POST(req){
   else if(name==='randevu_teyit')out=await randevuTeyit({bid,biz,pk,a,call});
   else if(name==='bekleme_listesi')out=await beklemeEkle({bid,a,call,tarih:date});
   else if(name==='kampanya_izni')out=await izinKaydet({bid,a,call});
+  else if(name==='yetkili_talebi'){
+   // Şikâyet / insanla görüşme isteği / anlaşılamama: patrona acil bildirim, çağrı "geri aranacak" olarak işaretlenir (çağrı bitince)
+   const SB={sikayet:'⚠️ ŞİKÂYET',yetkili_istiyor:'☎ Yetkiliyle görüşmek istiyor',anlasilamadi:'❓ Asistan anlayamadı, geri arayın',diger:'☎ Geri aranmak istiyor'},sb=SB[a.sebep]?a.sebep:'diger';
+   const ozet=String(a.ozet||'').replace(/\s+/g,' ').trim().slice(0,400),ad=a.name?String(a.name).slice(0,80):'';
+   const st=String(a.phone||'').replace(/\D/g,''),tel=st.length>=10&&st.length<=13?(st.length===10&&st[0]==='5'?'0'+st:st):(call.customer?.number||'');
+   if(call.id){const {count:once}=await adminSb.from('webhook_events').select('id',{count:'exact',head:true}).eq('type','yetkili_talebi').eq('vapi_call_id',call.id);
+    await adminSb.from('webhook_events').insert({type:'yetkili_talebi',business_id:bid,vapi_call_id:call.id,payload:{sebep:sb,ozet,ad,tel:tel?String(tel).slice(-13):''}});
+    if(!once)await bildir(bid,`${SB[sb]}${ad?' · '+ad:''}\n${ozet||'(özet yok)'}${tel?'\n📞 '+tel:'\n📞 Numara gizli'}\nÇağrı bitince "Siparişler ve çağrılar > Geri aranacaklar" listesinde.`,'acil');}
+   out={ok:true,message:sb==='sikayet'?'Yetkiliye acil bildirim gitti. Müşteriye özür dile, en kısa sürede aranacağını söyle; satış önerme.':'Not alındı, yetkili en kısa sürede geri arayacak. Müşteriye bunu söyle.'};}
   else if(name==='kayit_istemiyorum'){
    // KVKK: müşteri ses kaydına itiraz etti → çağrı bitince ses kaydı ve konuşma metni silinir
    if(call.id)await adminSb.from('webhook_events').insert({type:'kayit_itiraz',business_id:bid,vapi_call_id:call.id,payload:{}});

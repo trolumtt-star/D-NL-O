@@ -7,6 +7,11 @@ async function sonIslemler(bid,cid,vapiId){
  const {count:itiraz}=await adminSb.from('webhook_events').select('id',{count:'exact',head:true}).eq('type','kayit_itiraz').eq('vapi_call_id',vapiId);
  if(itiraz){await adminSb.from('calls').update({audio_url:null,transcript:null,kayit_silindi:true}).eq('id',cid);
   if(process.env.VAPI_API_KEY)await fetch('https://api.vapi.ai/call/'+encodeURIComponent(vapiId),{method:'DELETE',headers:{authorization:'Bearer '+process.env.VAPI_API_KEY},signal:AbortSignal.timeout(6000)}).catch(()=>{});}
+ {const {data:yt}=await adminSb.from('webhook_events').select('payload').eq('type','yetkili_talebi').eq('vapi_call_id',vapiId).order('created_at',{ascending:false}).limit(1);
+  if(yt?.[0]){const p=yt[0].payload||{},{data:cc}=await adminSb.from('calls').select('extracted,stated_phone').eq('id',cid).single();
+   const u={acil:true,geri_arandi:false,extracted:{...(cc?.extracted||{}),yetkili:{sebep:p.sebep,ozet:p.ozet}}};if(p.sebep==='sikayet')u.duygu='sinirli';
+   const t=String(p.tel||'').replace(/\D/g,'');if(t&&!cc?.stated_phone&&t.length>=10)u.stated_phone=t.length===10&&t[0]==='5'?'0'+t:t;
+   await adminSb.from('calls').update(u).eq('id',cid);}}
  const ep=pk.eposta&&st.eposta_ozet?.aktif&&st.eposta_ozet.adres,ck=pk.cikis&&st.cikis?.url;if(!ep&&!ck)return;
  const {data:c}=await adminSb.from('calls').select('id,created_at,caller_phone,stated_phone,customer_name,orders,address,extracted,duration_seconds,duygu,niyet,takip,acil,kalite,summary').eq('id',cid).single();if(!c)return;
  if(ep){const sat=[['Arayan',c.customer_name||'İsimsiz'],['Telefon',c.stated_phone||c.caller_phone||'-'],['Süre',Math.round((c.duration_seconds||0)/60*10)/10+' dk'],...(c.orders?[['Sipariş',c.orders]]:[]),...(c.address?[['Adres',c.address]]:[]),...Object.entries(c.extracted||{}).filter(([,x])=>typeof x==='string').slice(0,8),...(c.niyet?[['Neden aradı',c.niyet]]:[]),...(c.takip?[['Yapılacak',c.takip]]:[])];
