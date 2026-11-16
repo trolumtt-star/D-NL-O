@@ -1,4 +1,5 @@
 'use client';
+import {odemeDahil} from '@/lib/fiyatlar';
 // Ek dakika / aşım ödemesi. Kartta özet + "Ek dakika al" butonu; tıklayınca ekrana ödeme penceresi gelir:
 // 1) miktar  2) fatura/iletişim bilgileri  3) ödeme yöntemi -> Shopier'e yönlendirir ya da havale bilgisini gösterir.
 import {useEffect,useState} from 'react';import {createPortal} from 'react-dom';
@@ -35,7 +36,7 @@ function Pencere({v,b,tur,api,kapat,setMsg}){
  const k0=oku(),[bi,setBi]=useState({ad:k0.ad||'',soyad:k0.soyad||'',eposta:k0.eposta||(b?.email&&!/@isletme\.panel$/.test(b.email)?b.email:''),tel:k0.tel||String(b?.phone_number||'').replace(/\D/g,'').slice(-10)});
  useEffect(()=>{const e=x=>x.key==='Escape'&&kapat();addEventListener('keydown',e);document.body.style.overflow='hidden';return()=>{removeEventListener('keydown',e);document.body.style.overflow='';};},[]);
  const dk=asim?v.asim.borcDk:sec==='ozel'?Math.round(+ozel||0):sec,gec=asim||(dk>=v.enAz&&dk<=v.enCok);
- const f=gec&&dk?(()=>{const usd=Math.round(dk*bu*100)/100,t=Math.round(usd*kur*100)/100,k=Math.round(t*kd*100)/100;return {usd,t,k,top:Math.round((t+k)*100)/100};})():null;
+ const f=gec&&dk?(()=>{const usd=Math.round(dk*bu*100)/100,t0=Math.round(usd*kur*100)/100,k0=Math.round(t0*kd*100)/100,o=odemeDahil({tl_kdvsiz:t0,kdv:k0,toplam_tl:Math.round((t0+k0)*100)/100});return {usd,t:o.tl_kdvsiz,k:o.kdv,top:o.toplam_tl};})():null; // sunucuyla aynı: ödeme altyapısı payı dahil, tam liraya yukarı
  const telOk=/^5\d{9}$/.test(bi.tel.replace(/\D/g,'').slice(-10)),mailOk=/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(bi.eposta.trim());
  const bilgiOk=bi.ad.trim().length>=2&&bi.soyad.trim().length>=2&&mailOk&&telOk;
  const [link,setLink]=useState(null),[kod,setKod]=useState(null),[bitti,setBitti]=useState(false);
