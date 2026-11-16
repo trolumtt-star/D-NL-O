@@ -15,3 +15,10 @@ export async function GET(req){const pub=process.env.VAPI_PUBLIC_KEY;if(!pub){tr
  let da;try{da=await demoAsistan(new URL(req.url).searchParams.get('s')||'restoran');}catch(e){await adminSb.from('webhook_events').insert({type:'demo_hata',payload:{hata:String(e.message).slice(0,300)}});return hata('Canlı demo şu an hazırlanıyor, birkaç dakika sonra tekrar deneyin.',503);}
  await adminSb.from('webhook_events').insert({type:'demo',payload:{ip,sektor:da.sk.id}});
  return NextResponse.json({publicKey:pub,assistantId:da.id,ad:da.sk.isletme});}
+
+// Tarayıcıdaki sesli görüşme hatası kaydı (sebebi görebilmek için). IP başına günde 20 kayıt.
+export async function POST(req){try{const b=await req.json().catch(()=>({}));const m=String(b.hata||'').slice(0,400);if(!m)return NextResponse.json({ok:true});
+ const ip=crypto.createHash('sha256').update('demo:'+(req.headers.get('x-forwarded-for')||'').split(',')[0].trim()).digest('hex').slice(0,24),gun=new Date(Date.now()-864e5).toISOString();
+ const {count}=await adminSb.from('webhook_events').select('id',{count:'exact',head:true}).eq('type','demo_istemci_hata').eq('payload->>ip',ip).gte('created_at',gun);
+ if((count||0)<20)await adminSb.from('webhook_events').insert({type:'demo_istemci_hata',payload:{ip,hata:m,tip:String(b.tip||'').slice(0,20),ua:String(req.headers.get('user-agent')||'').slice(0,120)}});
+ return NextResponse.json({ok:true});}catch{return NextResponse.json({ok:true});}}

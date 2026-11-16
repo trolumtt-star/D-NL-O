@@ -1,6 +1,15 @@
 'use client';
 // Tarayıcıdan sesli görüşme (Vapi Web). demo: sitedeki canlı demo; benim: işletmenin kendi asistanı (panel).
 import {useEffect,useRef,useState} from 'react';
+// Vapi hataları iç içe nesne olarak gelir ("[object Object]" görünmesin): içindeki ilk anlamlı metni bul
+function hataMetni(e){const g=new Set();let bul='';const yur=(x,d)=>{if(bul||x==null||d>5)return;if(typeof x==='string'){if(x.trim()&&x!=='[object Object]')bul=x;return;}
+ if(typeof x!=='object'||g.has(x))return;g.add(x);if(Array.isArray(x)){x.forEach(y=>yur(y,d+1));return;}
+ for(const k of ['errorMsg','message','msg','error','reason','detail','statusText'])if(k in x)yur(x[k],d+1);};
+ yur(e,0);if(!bul){try{bul=JSON.stringify(e).slice(0,200);}catch{}}return bul||'Görüşme kesildi.';}
+function anlasilir(m){if(/wallet|balance|credit|bakiye/i.test(m))return 'Asistan şu an kullanılamıyor (servis bakiyesi). Lütfen biraz sonra tekrar deneyin.';
+ if(/permission|NotAllowed|microphone/i.test(m))return 'Mikrofon izni verilmedi. Tarayıcı ayarlarından mikrofona izin verin.';
+ if(/meeting has ended|ejected|ended/i.test(m))return 'Görüşme sona erdi.';return m.slice(0,160);}
+function hataBildir(m,tip){try{fetch('/api/demo',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({hata:String(m).slice(0,400),tip}),keepalive:true});}catch{}}
 export default function SesliDeneme({benim=false,tok=null,kisa=false,ayar=null,onCagri=null,onDurum=null,yaziGizle=false,altMetin=null,sektor=null}){
  const [d,setD]=useState('hazir'),[hata,setHata]=useState(''),[v,setV]=useState(1),[sn,setSn]=useState(0),[yazi,setYazi]=useState([]),[ad,setAd]=useState('');
  const vr=useRef(null),t0=useRef(0),kutu=useRef(null);
@@ -16,9 +25,9 @@ export default function SesliDeneme({benim=false,tok=null,kisa=false,ayar=null,o
    vapi.on('call-end',()=>{setD('bitti');setV(1);});
    vapi.on('volume-level',x=>setV(1+Math.min(1,x*2.2)*.35));
    vapi.on('message',m=>{if(m?.type==='transcript'&&m.transcriptType==='final')setYazi(y=>[...y.slice(-11),{r:m.role==='user'?'u':'a',m:m.transcript}]);});
-   vapi.on('error',e=>{setHata(String(e?.error?.message||e?.message||'Görüşme kesildi.').slice(0,160));setD('bitti');});
+   vapi.on('error',e=>{const m=hataMetni(e);hataBildir((e?.type?e.type+': ':'')+m,'olay');setHata(anlasilir(m));setD('bitti');});
    const c=await vapi.start(j.assistantId,ayar||undefined);if(c?.id)onCagri?.(c.id);}
-  catch(e){setHata(/permission|NotAllowed/i.test(String(e?.name||e?.message))?'Mikrofon izni verilmedi. Tarayıcı ayarlarından mikrofona izin verin.':e.message||'Görüşme başlatılamadı.');setD('hazir');}};
+  catch(e){const m=(e?.name&&/NotAllowed/i.test(e.name))?'permission':hataMetni(e);if(m!=='permission')hataBildir(m,'baslat');setHata(anlasilir(m)||'Görüşme başlatılamadı.');setD('hazir');}};
  const metin={hazir:benim?'Asistanını dene':'Asistanla konuş',baglaniyor:'Bağlanıyor…',konusuyor:'Dinliyor… konuşabilirsin',bitti:'Görüşme bitti'}[d];
  return <div className="ks-ses">
   <button className={'ni ks-kure'+(d==='konusuyor'?' cal':'')} style={{'--v':v}} onClick={basla} aria-label={d==='konusuyor'?'Görüşmeyi bitir':'Görüşmeyi başlat'}>
