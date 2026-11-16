@@ -17,7 +17,7 @@ function PaketAl({tok,b,kapat,ilk}){
    if(j.link){setLink(j.link);setKod(j.kod);setAdim(3);if(pen&&!pen.closed)pen.location.href=j.link;}else{pen?.close();if(j.iban){setIban(j);setAdim(4);}else throw new Error('Ödeme sayfası açılamadı.');}}
   catch(e){pen?.close();setHata(e.message);}setBusy(false);};
  return createPortal(<div role="dialog" aria-modal="true" onClick={e=>e.target===e.currentTarget&&!busy&&kapat()} style={{position:'fixed',inset:0,zIndex:9999,background:'rgba(0,0,0,.78)',backdropFilter:'blur(6px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
-  <div style={{width:'min(600px,100%)',maxHeight:'calc(100dvh - 32px)',overflowY:'auto',position:'relative',background:'#0e0e10',border:'1px solid rgba(255,255,255,.14)',borderRadius:22,padding:'24px 20px',boxShadow:'0 30px 90px -20px #000,0 0 0 1px rgba(255,31,61,.15)'}}>
+  <div style={{width:'min(600px,100%)',maxHeight:'calc(100dvh - 32px)',overflowY:'auto',position:'relative',background:'var(--surface)',border:'1px solid var(--rule)',borderRadius:22,padding:'24px 20px',boxShadow:'0 30px 90px -20px #000,0 0 0 1px rgba(255,31,61,.15)'}}>
    <button className="g" onClick={kapat} aria-label="Kapat" style={{position:'absolute',right:12,top:12,padding:'4px 10px'}}>✕</button>
    <h2 style={{marginRight:40}}>{bitti?'Paketin başladı 🎉':'Paketini seç'}</h2>
    {bitti?<><p style={{marginTop:10}}>Ödemen alındı, <b>{p.ad}</b> paketin aktif. Asistanın kuruluyor ve hattın bağlanıyor; ne yapman gerektiği (yönlendirme kodu ya da yeni numaran) birkaç dakika içinde bildirimlerine düşecek.</p><button style={{marginTop:14}} onClick={()=>location.reload()}>Tamam</button></>

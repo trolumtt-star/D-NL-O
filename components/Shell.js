@@ -1,6 +1,9 @@
 'use client';
+import {useState,useEffect} from 'react';
+function TemaBtn(){const [a,setA]=useState(false);useEffect(()=>{const f=()=>setA(!!window.temaAcik?.());f();addEventListener('tema',f);return()=>removeEventListener('tema',f);},[]);
+ return <button className="ni" data-tema-btn="" type="button" onClick={()=>window.temaDegis?.()}><i>{a?'🌙':'☀️'}</i><span>{a?'Koyu tema':'Açık tema'}</span></button>;}
 export default function Shell({brand,sub,items,tab,setTab,onLogout,badge={},children}){
  return <div className="shell"><aside className="side"><div className="brand"><b>{brand}</b><small>{sub}</small></div>
  <nav>{items.map(([k,l,ic])=><button key={k} className={'ni'+(tab===k?' on':'')} onClick={()=>setTab(k)}><i>{ic}</i><span>{l}</span>{badge[k]>0&&<em>{badge[k]}</em>}</button>)}</nav>
- <button className="ni" onClick={onLogout}><i>⎋</i><span>Çıkış</span></button></aside><main className="main" key={tab}>{children}</main></div>;}
+ <TemaBtn/><button className="ni" onClick={onLogout}><i>⎋</i><span>Çıkış</span></button></aside><main className="main" key={tab}>{children}</main></div>;}
 export const H=({t,s})=><div style={{marginBottom:20}}><h1 className="ph">{t}</h1>{s&&<p className="mut" style={{marginTop:4}}>{s}</p>}</div>;

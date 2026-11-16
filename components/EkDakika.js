@@ -55,7 +55,7 @@ function Pencere({v,b,tur,api,kapat,setMsg}){
   <div className="row" style={{marginTop:4}}><b>Ödenecek</b><b style={{fontSize:'1.25rem'}}>{tl(f.top)}</b></div></div>;
  const adimlar=asim?['Bilgiler','Ödeme']:['Miktar','Bilgiler','Ödeme'],aktif=asim?adim-2:adim-1;
  return createPortal(<div role="dialog" aria-modal="true" aria-label="Ek dakika satın al" onClick={e=>e.target===e.currentTarget&&!busy&&kapat()} style={{position:'fixed',top:0,left:0,width:'100vw',height:'100dvh',zIndex:9999,background:'rgba(0,0,0,.75)',backdropFilter:'blur(6px)',WebkitBackdropFilter:'blur(6px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16,boxSizing:'border-box'}}>
-  <div style={{width:'min(560px,100%)',maxHeight:'calc(100dvh - 32px)',overflowY:'auto',position:'relative',background:'#0e0e10',border:'1px solid rgba(255,255,255,.14)',borderRadius:20,padding:'24px 22px',boxShadow:'0 30px 90px -20px rgba(0,0,0,.9),0 0 0 1px rgba(255,31,61,.12)',transform:'none',animation:'none'}}>
+  <div style={{width:'min(560px,100%)',maxHeight:'calc(100dvh - 32px)',overflowY:'auto',position:'relative',background:'var(--surface)',border:'1px solid var(--rule)',borderRadius:20,padding:'24px 22px',boxShadow:'0 30px 90px -20px rgba(0,0,0,.9),0 0 0 1px rgba(255,31,61,.12)',transform:'none',animation:'none'}}>
    <button className="g" aria-label="Kapat" onClick={kapat} style={{position:'absolute',right:12,top:12,padding:'4px 10px'}}>✕</button>
    <h2 style={{marginRight:40}}>{asim?'Aşım ücretini öde':'Ek dakika al'}</h2>
    {adim<4&&<div className="row" style={{justifyContent:'flex-start',gap:6,margin:'6px 0 14px'}}>{adimlar.map((x,i)=><span key={x} className={'tag'+(i===aktif?' x':'')} style={{opacity:i>aktif?.5:1}}>{i+1}. {x}</span>)}</div>}

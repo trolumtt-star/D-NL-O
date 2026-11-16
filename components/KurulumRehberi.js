@@ -20,7 +20,7 @@ export default function KurulumRehberi({b,hasA,urunSay,git}){
  return <div className="card" style={{border:'1px solid rgba(255,31,61,.45)'}}>
   <div className="row" style={{flexWrap:'wrap',gap:8}}><div><h2>🚀 Kurulum rehberi</h2><p className="mut" style={{marginTop:4}}>Çoğunu sistem kendisi yaptı; birkaç adım sana kaldı. {bitti}/{adim.length} tamam.</p></div>
    <button className="g" style={{padding:'4px 10px'}} onClick={()=>{try{localStorage.setItem('rehber_gizle_'+b.id,'1');}catch{}setGizli(true);}}>Gizle</button></div>
-  <div style={{height:8,borderRadius:99,background:'rgba(255,255,255,.08)',margin:'10px 0 6px',overflow:'hidden'}}><div style={{width:yuzde+'%',height:'100%',background:'linear-gradient(90deg,#ff1f3d,#ff6b7d)',transition:'width .6s'}}/></div>
+  <div style={{height:8,borderRadius:99,background:'var(--soft)',margin:'10px 0 6px',overflow:'hidden'}}><div style={{width:yuzde+'%',height:'100%',background:'linear-gradient(90deg,#ff1f3d,#ff6b7d)',transition:'width .6s'}}/></div>
   <div style={{display:'grid',gap:2,marginTop:6}}>{adim.map((x,i)=><div key={i} className="row" style={{gap:10,alignItems:'flex-start',justifyContent:'flex-start',padding:'10px 0',borderTop:i?'1px solid rgba(255,255,255,.06)':0,opacity:x.ok?.65:1}}>
    <span style={{fontSize:'1.15rem',lineHeight:1.3}}>{x.ok?'✅':x.oto?'⏳':'⬜'}</span>
    <div style={{flex:1}}><b>{x.t}</b> {x.oto&&<span className="tag" style={{marginLeft:4}}>otomatik</span>}<div className="mut" style={{fontSize:'.86rem',marginTop:2}}>{x.a}</div></div>
