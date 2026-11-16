@@ -1,4 +1,4 @@
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {e164} from '@/lib/vapi';import {paketOf} from '@/lib/paket';import {testYakala} from '@/lib/yonlendirme';import {alisverisSayisi,sadakatAyar,sadakatMetni,izinliMi,geriAyar,ekSatisAyar,patronMu} from '@/lib/buyume';
+import {vapiGizli,vapiIzin,basliktan} from '@/lib/gizli';import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {e164} from '@/lib/vapi';import {paketOf} from '@/lib/paket';import {testYakala} from '@/lib/yonlendirme';import {alisverisSayisi,sadakatAyar,sadakatMetni,izinliMi,geriAyar,ekSatisAyar,patronMu} from '@/lib/buyume';
 // Bu numarada şu an süren (bu arama hariç) kaç arama var? Vapi'ye sorulur; cevap gelmezse sınır uygulanmaz.
 const AKTIF=new Set(['queued','ringing','in-progress']);
 async function aktifSayisi(pid,buId){const key=process.env.VAPI_API_KEY;if(!key)return 0;
@@ -18,8 +18,7 @@ export const maxDuration=10; // Vapi bu uca 7.5 saniye içinde cevap bekliyor
 // 3) değilse asistan verilir; paket izin veriyorsa sadık müşteri adıyla karşılanır.
 export async function POST(req){
  try{
-  const sec=process.env.VAPI_SECRET,hs=req.headers.get('x-vapi-secret')||(req.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');
-  if(sec&&hs&&hs!==sec)return NextResponse.json({error:'unauthorized'},{status:401});
+  if(!(await vapiIzin(basliktan(req))))return NextResponse.json({error:'unauthorized'},{status:401});
   const body=await req.json(),m=body.message||body;
   if(m.type&&m.type!=='assistant-request')return NextResponse.json({});
   const pid=m.call?.phoneNumberId||m.phoneNumber?.id||null;

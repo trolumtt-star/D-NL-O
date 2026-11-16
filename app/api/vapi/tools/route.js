@@ -1,4 +1,4 @@
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {tariftenBul} from '@/lib/harita';import {bildir,siparisBildir} from '@/lib/bildir';import {paketOf} from '@/lib/paket';import {smsGonder} from '@/lib/entegrasyon';import {takvimeYaz} from '@/lib/google';import {kuryeCagir} from '@/lib/kurye';import {sadakatKontrol,randevuTeyit,beklemeEkle,izinKaydet,son10,ekSatisKaydet,patronIslem} from '@/lib/buyume';
+import {vapiGizli,vapiIzin,basliktan} from '@/lib/gizli';import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {tariftenBul} from '@/lib/harita';import {bildir,siparisBildir} from '@/lib/bildir';import {paketOf} from '@/lib/paket';import {smsGonder} from '@/lib/entegrasyon';import {takvimeYaz} from '@/lib/google';import {kuryeCagir} from '@/lib/kurye';import {sadakatKontrol,randevuTeyit,beklemeEkle,izinKaydet,son10,ekSatisKaydet,patronIslem} from '@/lib/buyume';
 // Kuş uçuşu mesafe (km)
 const km=(a,b)=>{const R=6371,r=x=>x*Math.PI/180,dl=r(b.lat-a.lat),dg=r(b.lng-a.lng),h=Math.sin(dl/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dg/2)**2;return 2*R*Math.asin(Math.sqrt(h));};
 const DURUM={new:'alındı, hazırlanmayı bekliyor',preparing:'hazırlanıyor',delivering:'yolda, kurye çıktı',done:'teslim edildi',cancelled:'iptal edildi'};
@@ -15,8 +15,8 @@ const nd=d=>{const s=String(d||'').trim().toLowerCase();if(!s||s.startsWith('bug
  return today();};
 const nt=t=>{const m=String(t||'').match(/(\d{1,2})\s*[:.]\s*(\d{2})/);return m?m[1].padStart(2,'0')+':'+m[2]:null;};
 export async function POST(req){
- const sec=process.env.VAPI_SECRET,hs=req.headers.get('x-vapi-secret')||(req.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');
- if(sec&&hs!==sec){await log('tool_reddedildi',null,'Araç isteği reddedildi: VAPI_SECRET '+(hs?'geldi ama farklı':'hiç gelmedi')+'. Vapi > Tools > aracın Server ayarına aynı Secret Token yazılmalı.');return NextResponse.json({error:'unauthorized'},{status:401});}
+ const hs=basliktan(req);
+ if(!(await vapiIzin(hs))){await log('tool_reddedildi',null,'Araç isteği reddedildi: VAPI_SECRET '+(hs?'geldi ama farklı':'hiç gelmedi')+'. Vapi > Tools > aracın Server ayarına aynı Secret Token yazılmalı.');return NextResponse.json({error:'unauthorized'},{status:401});}
  const body=await req.json(),m=body.message||body,call=m.call||{},aid=call.assistantId||m.assistant?.id;
  const bid=await resolve(req,'tools',aid);
  const {data:biz}=bid?await adminSb.from('businesses').select('name,status,plan,vertical,settings,quota_minutes_total').eq('id',bid).single():{data:null};

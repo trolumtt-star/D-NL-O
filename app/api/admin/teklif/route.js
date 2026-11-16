@@ -1,5 +1,5 @@
 // Admin: teklif asistanı yönetimi (kurulum, arama listesi, başlat/durdur, sonuçlar).
-import {NextResponse} from 'next/server';import {adminSb,requireAdmin} from '@/lib/admin';import {ayar,ayarYaz,saatUygun,sonrakiniAra,telNo,demoSil,ASISTAN_PROMPT} from '@/lib/teklif';import {vapiIstek} from '@/lib/vapi';import {SITE} from '@/lib/site';
+import {vapiGizli} from '@/lib/gizli';import {NextResponse} from 'next/server';import {adminSb,requireAdmin} from '@/lib/admin';import {ayar,ayarYaz,saatUygun,sonrakiniAra,telNo,demoSil,ASISTAN_PROMPT} from '@/lib/teklif';import {vapiIstek} from '@/lib/vapi';import {SITE} from '@/lib/site';
 export const dynamic='force-dynamic';export const maxDuration=40;
 const hata=(m,s=400)=>NextResponse.json({error:m},{status:s});
 const SAAT=/^([01]\d|2[0-3]):[0-5]\d$/;
@@ -16,7 +16,7 @@ export async function POST(req){try{await requireAdmin(req);const x=await req.js
    const {data:b}=await adminSb.from('businesses').select('vapi_assistant_id').not('vapi_assistant_id','is',null).limit(1);const kaynak=String(x.kaynak||b?.[0]?.vapi_assistant_id||'');
    if(!kaynak)return hata('Ses ve modeli kopyalamak için önce bir işletmenin Vapi asistanı olmalı.');
    const src=await vapiIstek('/assistant/'+encodeURIComponent(kaynak));if(!src.ok)return hata('Kaynak asistan okunamadı: '+src.error);
-   const sec=process.env.VAPI_SECRET,server={url:SITE+'/api/teklif/tool',...(sec?{headers:{'x-vapi-secret':sec}}:{})};
+   const sec=(await vapiGizli()).aktif,server={url:SITE+'/api/teklif/tool',...(sec?{headers:{'x-vapi-secret':sec}}:{})};
    const S=(t,d,e)=>({type:t,description:d,...(e?{enum:e}:{})});
    const tanim=[{name:'demo_saatleri',description:'Demo randevusu için boş gün ve saatleri getirir.',parameters:{type:'object',properties:{}}},
     {name:'teklif_sonuc',description:'Görüşmenin sonucunu kaydeder. Görüşmeyi bitirmeden önce bir kez çağrılır.',parameters:{type:'object',required:['sonuc'],properties:{sonuc:S('string','randevu: demo günü verildi; ilgilendi: bilgi istedi; sonra: daha sonra aranacak; istemiyor: aranmak istemiyor; yanlis: yanlış numara',['randevu','ilgilendi','sonra','istemiyor','yanlis']),randevu_tarih:S('string','YYYY-AA-GG'),randevu_saat:S('string','SS:DD'),yetkili:S('string','Görüşülen yetkilinin adı'),geri_ara:S('string','Ne zaman aranmak istedi'),not:S('string','Kısa not')}}}];

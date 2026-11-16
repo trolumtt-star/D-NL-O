@@ -1,4 +1,4 @@
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {ayikla,bekleyenleriOku} from '@/lib/ayikla';import {durdur} from '@/lib/vapi';import {paketOf} from '@/lib/paket';import {epostaGonder,esc} from '@/lib/entegrasyon';import {cikisGonder} from '@/lib/cikis';import {bildir} from '@/lib/bildir';
+import {vapiGizli,vapiIzin,basliktan} from '@/lib/gizli';import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {ayikla,bekleyenleriOku} from '@/lib/ayikla';import {durdur} from '@/lib/vapi';import {paketOf} from '@/lib/paket';import {epostaGonder,esc} from '@/lib/entegrasyon';import {cikisGonder} from '@/lib/cikis';import {bildir} from '@/lib/bildir';
 export const maxDuration=60;
 const today=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Istanbul'});
 const log=(type,bid,cid,error)=>adminSb.from('webhook_events').insert({type,business_id:bid||null,vapi_call_id:cid||null,payload:{error}});
@@ -14,7 +14,7 @@ async function sonIslemler(bid,cid,vapiId){
    `<div style="font-family:Arial,sans-serif;font-size:14px"><h2 style="margin:0 0 8px">${c.orders?'Yeni sipariş':'Yeni çağrı'}</h2><table cellpadding="6" style="border-collapse:collapse">${sat.map(([k,x])=>`<tr><td style="color:#666">${esc(k)}</td><td><b>${esc(x)}</b></td></tr>`).join('')}</table>${c.summary?`<p style="color:#444">${esc(c.summary)}</p>`:''}<p style="color:#999;font-size:12px">Dinlio AI · Bu e-postayı panelde Ayarlar > E-posta özeti kısmından kapatabilirsiniz.</p></div>`);}
  if(ck)await cikisGonder(st.cikis,{olay:'cagri',cagri:c});}
 export async function POST(req){
- if(process.env.VAPI_SECRET&&req.headers.get('x-vapi-secret')!==process.env.VAPI_SECRET){await log('reddedildi',null,null,'VAPI_SECRET uyuşmuyor. Vapi secret başlığı: '+(req.headers.get('x-vapi-secret')?'geldi ama farklı':'hiç gelmedi'));return NextResponse.json({error:'unauthorized'},{status:401});}
+ if(!(await vapiIzin(basliktan(req)))){await log('reddedildi',null,null,'VAPI_SECRET uyuşmuyor. Vapi secret başlığı: '+(req.headers.get('x-vapi-secret')?'geldi ama farklı':'hiç gelmedi'));return NextResponse.json({error:'unauthorized'},{status:401});}
  const body=await req.json(),m=body.message||body,type=m.type||'unknown',call=m.call||{},aid=call.assistantId||m.assistant?.id;
  if(type!=='end-of-call-report'||!call.id)return NextResponse.json({ok:true,ignored:type});
  // Yönlendirme testi ve test hattının giden araması: çağrı/dakika olarak kaydedilmez

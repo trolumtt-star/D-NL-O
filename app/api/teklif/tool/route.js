@@ -1,10 +1,9 @@
 // Teklif asistanının araçları: demo_saatleri, teklif_sonuc. Sadece bizim kuyruğumuzdaki aramalar için çalışır.
-import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {ayar,demoSaatleri,demoSil} from '@/lib/teklif';import {smsGonder} from '@/lib/entegrasyon';import {DESTEK} from '@/lib/destek';
+import {vapiGizli,vapiIzin,basliktan} from '@/lib/gizli';import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {ayar,demoSaatleri,demoSil} from '@/lib/teklif';import {smsGonder} from '@/lib/entegrasyon';import {DESTEK} from '@/lib/destek';
 export const dynamic='force-dynamic';export const maxDuration=20;
 const SONUC=['randevu','ilgilendi','sonra','istemiyor','yanlis'];
 export async function POST(req){
- const sec=process.env.VAPI_SECRET,hs=req.headers.get('x-vapi-secret')||(req.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');
- if(sec&&hs!==sec)return NextResponse.json({error:'yetkisiz'},{status:401});
+ if(!(await vapiIzin(basliktan(req))))return NextResponse.json({error:'yetkisiz'},{status:401});
  let body;try{body=await req.json();}catch{return NextResponse.json({results:[]});}
  const m=body.message||{},call=m.call||{},calls=m.toolCallList||m.toolCalls||[],results=[];
  const {data:x}=call.id?await adminSb.from('teklif_arama').select('id,ad,tel,demo_asistan_id').eq('vapi_call_id',call.id).maybeSingle():{data:null};
