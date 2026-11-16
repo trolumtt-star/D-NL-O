@@ -12,7 +12,7 @@ export default function SatinAl(){
  useEffect(()=>{if(g)setH(x=>({...x,ad:x.ad||g.ad,eposta:g.email}));},[g]);
  useEffect(()=>{const u=new URLSearchParams(location.search);if(u.get('g'))return;setP({id:PK.some(x=>x.id===u.get('paket'))?u.get('paket'):'m',all:u.get('all')==='1',yil:u.get('yil')==='1'});
   fetch('/api/kayit').then(r=>r.json()).then(setS).catch(()=>{});},[]);
- const sek=(s?.sektorler||[]).find(x=>x.id===b.sektor),siparis=sek?.kind==='order',f=paketFiyat({id:p.id,all:p.all,yil:p.yil,ilkAy:true}),nu=s?.numara?.ucret||0;
+ const sek=(s?.sektorler||[]).find(x=>x.id===b.sektor),siparis=sek?.kind==='order',f=paketFiyat({id:p.id,all:p.all,yil:p.yil,ilkAy:true}),nu=s?.numara?.ucret||0,kdvY=s&&s.kdv===0?'':' + KDV';
  const ok1=n.tercih==='kirala'||!n.mevcut||/^0?[2-5]\d{9}$/.test(n.mevcut.replace(/\D/g,''));
  const ok2=b.isletme.trim().length>=2&&b.sektor;
  const [kb,setKb]=useState('');
@@ -38,7 +38,7 @@ export default function SatinAl(){
    <div className="sa-num"><button type="button" className={'ni'+(n.tercih==='kendi'?' secili':'')} onClick={()=>setN({...n,tercih:'kendi'})}><b>📱 Kendi numaramı yönlendireceğim</b><small>Müşterilerin bildiği numara değişmez; numaranı tek bir kodla asistan hattına yönlendirirsin. ⚠ Operatörün yönlendirilen çağrı başına ücret alabilir (ör. Turkcell'de paketsiz yönlendirme ücretli, aylık yönlendirme paketi önerilir).</small></button>
     <button type="button" className={'ni'+(n.tercih==='kirala'?' secili':'')} onClick={()=>setN({...n,tercih:'kirala'})}><b>☎ Yeni numara al (alan kodlu ya da 0850)</b><small>Asistan doğrudan bu numaradan cevap verir; yönlendirme ve yönlendirme ücreti yok. Tabelana, Google ve Instagram'a bu numarayı yazarsın.{nu?` +${nu.toLocaleString('tr-TR')} ₺/ay + KDV`:''}</small></button></div>
    {n.tercih==='kendi'&&<><label>Yönlendireceğin numara (isteğe bağlı)</label><input value={n.mevcut} onChange={e=>setN({...n,mevcut:e.target.value})} inputMode="tel" placeholder="ör. 0226 xxx xx xx ya da 05xx…"/></>}
-   <div className="sa-ozet"><span>{f.aciklama}{n.tercih==='kirala'&&nu?' + yeni numara':''}</span><b>${f.usd}{n.tercih==='kirala'&&nu?` + ${(nu*(p.yil?12:1)).toLocaleString('tr-TR')} ₺`:''} <small>+ KDV</small></b></div>
+   <div className="sa-ozet"><span>{f.aciklama}{n.tercih==='kirala'&&nu?' + yeni numara':''}</span><b>${f.usd}{n.tercih==='kirala'&&nu?` + ${(nu*(p.yil?12:1)).toLocaleString('tr-TR')} ₺`:''} <small>{kdvY}</small></b></div>
    <button className="ks-btn" disabled={!ok1} onClick={()=>setAd(2)}>Devam</button></div>}
   {ad===2&&<div className="ks-kart">
    <label>İşletmenin adı</label><input value={b.isletme} onChange={e=>setB({...b,isletme:e.target.value})} placeholder="ör. Beyzade Kebap"/>
@@ -65,7 +65,7 @@ export default function SatinAl(){
    <input tabIndex={-1} autoComplete="off" value={h.web} onChange={e=>setH({...h,web:e.target.value})} style={{position:'absolute',left:'-9999px',width:1,height:1,opacity:0}} aria-hidden="true"/>
    <label className="ks-ok"><input type="checkbox" checked={h.kvkk} onChange={e=>setH({...h,kvkk:e.target.checked})}/><span><a href="/yasal/kvkk" target="_blank">KVKK aydınlatma metnini</a> okudum, <a href="/yasal/sozlesme" target="_blank">hizmet sözleşmesini</a> kabul ediyorum.</span></label>
    {err&&<div className="ks-hata">{err}</div>}
-   <div className="sa-ozet"><span>{f.aciklama}{n.tercih==='kirala'?' + yeni numara':' + kendi numaram'}</span><b>${f.usd} <small>+ KDV</small></b></div>
+   <div className="sa-ozet"><span>{f.aciklama}{n.tercih==='kirala'?' + yeni numara':' + kendi numaram'}</span><b>${f.usd} <small>{kdvY}</small></b></div>
    <div className="sa-iki"><button type="button" className="ks-btn g ni" onClick={()=>setAd(2)}>Geri</button><button className="ks-btn ni" disabled={busy||!h.kvkk||(!g&&!sifreKontrol(h.sifre,{eposta:h.eposta,ad:h.ad}).gecerli)}>{busy?'Hesabın açılıyor…':'Hesabı aç ve kartla öde'}</button></div>
    <p style={{color:'var(--mute)',fontSize:'.8rem',marginTop:8,textAlign:'center'}}>🔒 Sonraki adımda güvenli ödeme sayfası açılır. Ödeme onaylanınca asistanın otomatik kurulur.</p></form>}
  </div></div>;}

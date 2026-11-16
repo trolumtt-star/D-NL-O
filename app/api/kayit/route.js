@@ -1,10 +1,11 @@
+import {kdvOrani} from '@/lib/sistem';
 // KENDİ KENDİNE KAYIT: ücretsiz hesap + 7 gün deneme. İşletme kendi asistanını /kurulum sohbetinde kurar, deneme bitince paket alır.
 // Kötüye kullanım: IP başına günde 3, toplamda günde 60 kayıt; bot tuzağı alanı; deneme sadece 30 dakika.
 import {NextResponse} from 'next/server';import crypto from 'crypto';import {adminSb} from '@/lib/admin';import {PK} from '@/lib/fiyatlar';import {denemeVarsayilan} from '@/lib/deneme';import {numaraAyar} from '@/lib/numara';import {sifreKontrol} from '@/lib/sifre';import {bildir} from '@/lib/bildir';
 export const dynamic='force-dynamic';
 const hata=(m,s=400)=>NextResponse.json({error:m},{status:s});
 const ipHash=req=>crypto.createHash('sha256').update('kayit:'+(req.headers.get('x-forwarded-for')||'').split(',')[0].trim()+(process.env.SUPABASE_SERVICE_ROLE_KEY||'').slice(0,12)).digest('hex').slice(0,24);
-export async function GET(){const {data}=await adminSb.from('verticals').select('id,name,kind').order('sort');return NextResponse.json({sektorler:data||[],paketler:PK.map(p=>({id:p.id,ad:p.ad,dk:p.dk})),deneme:await denemeVarsayilan(),numara:{ucret:(await numaraAyar()).ucret}});}
+export async function GET(){const {data}=await adminSb.from('verticals').select('id,name,kind').order('sort');return NextResponse.json({sektorler:data||[],paketler:PK.map(p=>({id:p.id,ad:p.ad,dk:p.dk})),deneme:await denemeVarsayilan(),numara:{ucret:(await numaraAyar()).ucret},kdv:await kdvOrani()});}
 
 // Satın alma formundaki işletme bilgisi → asistan kurulum bilgisi (lib/asistanOlustur.js biçimi)
 const tz=(v,n)=>String(v??'').replace(/[{}%<>]/g,'').replace(/\r/g,'').trim().slice(0,n);
