@@ -25,7 +25,8 @@ export async function POST(req){try{await requireAdmin(req);const x=await req.js
  // ASİSTANLARI GÜNCELLE: asistan araçları/kuralları değişince (yeni özellik) bütün işletmelerin Vapi asistanı yeniden kurulur; anahtar değişmez.
  if(x.islem==='araclari_guncelle'){const {data:bl}=await adminSb.from('businesses').select('id,name').not('vapi_assistant_id','is',null);const o=new URL(req.url).origin;let ok=0;const hatalar=[];
   for(const b of bl||[]){try{await araclariKur(b.id,o);ok++;}catch(e){hatalar.push((b.name||b.id)+': '+String(e.message).slice(0,80));}}
-  return NextResponse.json({ok:!hatalar.length,mesaj:`${ok} işletmenin asistanı güncellendi.`+(hatalar.length?' Güncellenemeyenler: '+hatalar.join(' | '):'')});}
+  try{const dm=await demoHepsiniKur();if(dm?.hatalar?.length)hatalar.push('Demo: '+dm.hatalar.join(', '));}catch(e){hatalar.push('Demo: '+String(e.message).slice(0,80));}
+  return NextResponse.json({ok:!hatalar.length,mesaj:`${ok} işletmenin asistanı ve demo asistanları güncellendi.`+(hatalar.length?' Güncellenemeyenler: '+hatalar.join(' | '):'')});}
  if(x.islem==='demo_kur'){const r=await demoHepsiniKur();
   return NextResponse.json({ok:!r.hatalar.length,mesaj:`${r.kurulan} sektörün demo asistanı Vapi'de hazır.`+(r.hatalar.length?' Kurulamayanlar: '+r.hatalar.join(' | '):'')+(process.env.VAPI_PUBLIC_KEY?'':' ⚠ Vercel\'e VAPI_PUBLIC_KEY eklenmemiş, demo bu yüzden açılmaz.')});}
  if(x.islem==='kanal_sil'){await adminSb.from('mesaj_kanallari').delete().eq('id',String(x.id||''));return NextResponse.json({ok:true});}
