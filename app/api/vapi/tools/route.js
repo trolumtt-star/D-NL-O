@@ -26,6 +26,7 @@ export async function POST(req){
  for(const tc of calls){
   const name=tc.name||tc.function?.name;let a=tc.arguments||tc.function?.arguments||{};if(typeof a==='string'){try{a=JSON.parse(a);}catch{a={};}}
   const date=(d=>d<today()?today():d)(nd(a.date)),time=nt(a.time)||nowT();let out;
+  try{ // bir araç hata verirse sadece o araç 'geçici hata' döner, görüşme ve diğer araçlar etkilenmez
   if(!biz)out={ok:false,reason:'business_not_found'};
   else if(biz.status==='suspended'&&['save_order','save_request','book_table','book_appointment'].includes(name))out={ok:false,reason:'quota_exhausted',message:'Bu işletmenin asistan süresi doldu, kayıt alınamıyor. Müşteriye işletmeyi doğrudan aramasını kibarca söyle ve görüşmeyi bitir.'};
   else if(name==='check_tables'){const {data,error}=await adminSb.rpc('free_tables',{p_business:bid,p_date:date,p_time:time});out=error?{ok:false,reason:error.message}:{ok:true,date,time,free_tables:data,message:data.length?`Müsait masalar: ${data.join(', ')}`:'Bu saatte boş masa yok.'};}
@@ -108,6 +109,7 @@ export async function POST(req){
    try{out=await tariftenBul({mahalle:a.mahalle,ilce:a.ilce,yerler:yer,tarif:a.tarif},biz.settings?.konum);
     if(bolge&&out&&typeof out==='object'){const isle=x=>{if(x&&+x.lat&&+x.lng){const d=km(bolge.merkez,{lat:+x.lat,lng:+x.lng});x.uzaklikKm=+d.toFixed(1);if(d>bolge.km)x.teslimatBolgesiDisinda=true;}};(Array.isArray(out.adaylar)?out.adaylar:[]).forEach(isle);isle(out);if(out.teslimatBolgesiDisinda||(Array.isArray(out.adaylar)&&out.adaylar.length&&out.adaylar.every(x=>x.teslimatBolgesiDisinda)))out.uyari=`Bu konum teslimat bölgesinin (${bolge.km} km) dışında görünüyor. Müşteriye kibarca bildir, gel-al öner.`;}}catch(e){out={ok:false,reason:'Harita şu an cevap vermedi. Müşteriden tarifi kurye notu olarak al, sipariş yine kaydedilsin.'};}}
   else out={ok:false,reason:'unknown_tool'};
+  }catch(e){out={ok:false,reason:'gecici_hata',message:'Sistemde anlık bir sorun oldu. Müşteriye bilgileri not aldığını söyle; işletme kendisine dönüş yapacak. Konuşmayı kibarca sürdür.'};try{await adminSb.from('webhook_events').insert({type:'tool_hata',business_id:biz?.id||null,vapi_call_id:call.id||null,payload:{tool:name,hata:String(e?.message||e).slice(0,300)}});}catch{}}
   if(out&&typeof out==='object'&&!Array.isArray(out))out.bugun=today();
   await log('tool_call',bid,out?.ok===false?String(out.reason||'hata'):null,{tool:name,args:a?.pin?{...a,pin:'***'}:a,result:out});
   results.push({toolCallId:tc.id,result:JSON.stringify(out)});}
