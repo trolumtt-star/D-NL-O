@@ -1,5 +1,5 @@
 // İşletme sahibinin asistan ayarları. Hepsi businesses.settings içinde tutulur; /api/vapi/assist her aramada okur.
-import {NextResponse} from 'next/server';import crypto from 'crypto';import {adminSb} from '@/lib/admin';import {requireOwner} from '@/lib/owner';import {paketOf,enAzPaket} from '@/lib/paket';import {durum,tr90} from '@/lib/entegrasyon';import {cikisGonder,urlGuvenli} from '@/lib/cikis';
+import {NextResponse} from 'next/server';import crypto from 'crypto';import {adminSb} from '@/lib/admin';import {requireOwner} from '@/lib/owner';import {paketOf,enAzPaket} from '@/lib/paket';import {sgAyar} from '@/lib/siparisGuvenlik';import {durum,tr90} from '@/lib/entegrasyon';import {cikisGonder,urlGuvenli} from '@/lib/cikis';
 export const dynamic='force-dynamic';
 const hata=(m,s=400)=>NextResponse.json({error:m},{status:s});
 // Asistanın şablon motoru {{ }} ve {% %} kullanır; işletmenin yazdığı metin şablon gibi çalışmasın
@@ -12,7 +12,7 @@ const ozet=b=>{const s=b.settings||{},pk=paketOf(b),d=durum();
  return {tatil:s.tatil||{aktif:false,mesaj:''},kara_liste:s.kara_liste||[],kampanya:s.kampanya||{aktif:false,metin:''},bilgi:s.bilgi||'',
   asistan:s.asistan||{ad:'',kisilik:''},gorusme:s.gorusme||{max_dk:0,yavas:false,kayit_kapali:false},teslimat_km:s.teslimat_km||0,acil_tanim:s.acil_tanim||'',
   aktarma_no:s.aktarma_no||'',hatirlatma:s.hatirlatma||'yok',sms_onay:!!s.sms_onay,eposta_ozet:s.eposta_ozet||{aktif:false,adres:''},
-  cikis:s.cikis?{url:s.cikis.url,gizli:s.cikis.gizli}:null,yorum:s.yorum||{aktif:false,link:''},wa_oto:!!s.wa_oto,konumVar:!!s.konum?.lat,
+  cikis:s.cikis?{url:s.cikis.url,gizli:s.cikis.gizli}:null,yorum:s.yorum||{aktif:false,link:''},wa_oto:!!s.wa_oto,konumVar:!!s.konum?.lat,siparis_guvenlik:sgAyar(s),
   baglanti:{netgsm:d.netgsm,eposta:d.eposta,whatsapp:d.whatsapp},
   paket:Object.fromEntries(Object.entries(pk).filter(([k])=>k!=='id')),enAz:Object.fromEntries(Object.keys(KAPI).map(k=>[k,enAzPaket(k)]))};};
 export async function GET(req){try{const b=await requireOwner(req);return NextResponse.json(ozet(b));}catch(e){return hata(e.message,401);}}
@@ -35,6 +35,8 @@ export async function POST(req){try{const b=await requireOwner(req);const x=awai
    s.cikis={url:u,gizli:s.cikis?.gizli||crypto.randomBytes(18).toString('base64url')};break;}
   case 'yorum':{if(x.aktif)kapi('sms');const l=String(x.link||'').trim().slice(0,300);let h='';try{const u=new URL(l);h=u.protocol==='https:'?u.hostname.toLowerCase():'';}catch{}
    if(x.aktif&&!/(^|\.)(google\.com|google\.com\.tr|g\.page|goo\.gl)$/.test(h))return hata('Google yorum linkinizi yazın (Google Haritalar\'da işletmeniz > Yorum iste > linki kopyala).');s.yorum={aktif:!!x.aktif,link:l};break;}
+  case 'siparis_guvenlik':{const y=Math.round(+x.yeniTL||0),h=Math.round(+x.saatlik||0);if(y<0||y>100000)return hata('Tutar 0-100000 TL arası olmalı (0 = kapalı).');if(h<0||h>20)return hata('Saatlik sınır 0-20 arası olmalı (0 = kapalı).');
+   s.siparis_guvenlik={gizli:!!x.gizli,yeniTL:y,saatlik:h};break;}
   case 'wa_oto':if(x.aktif)kapi('mesaj');s.wa_oto=!!x.aktif;break;
   case 'cikis_test':{if(!s.cikis?.url)return hata('Önce adresi kaydedin.');const r=await cikisGonder(s.cikis,{olay:'test',mesaj:'Dinlio bağlantı testi',zaman:new Date().toISOString()});return r.ok?NextResponse.json({ok:true,mesaj:'Test gönderildi, sisteminiz '+r.durum+' döndü.'}):hata('Gönderilemedi: '+r.neden);}
   default:return hata('Geçersiz işlem');}

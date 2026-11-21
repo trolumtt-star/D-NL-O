@@ -9,7 +9,7 @@ async function sonIslemler(bid,cid,vapiId){
   if(process.env.VAPI_API_KEY)await fetch('https://api.vapi.ai/call/'+encodeURIComponent(vapiId),{method:'DELETE',headers:{authorization:'Bearer '+process.env.VAPI_API_KEY},signal:AbortSignal.timeout(6000)}).catch(()=>{});}
  {const {data:yt}=await adminSb.from('webhook_events').select('payload').eq('type','yetkili_talebi').eq('vapi_call_id',vapiId).order('created_at',{ascending:false}).limit(1);
   if(yt?.[0]){const p=yt[0].payload||{},{data:cc}=await adminSb.from('calls').select('extracted,stated_phone').eq('id',cid).single();
-   const u={acil:true,geri_arandi:false,extracted:{...(cc?.extracted||{}),yetkili:{sebep:p.sebep,ozet:p.ozet}}};if(p.sebep==='sikayet')u.duygu='sinirli';
+   const u={acil:true,extracted:{...(cc?.extracted||{}),yetkili:{sebep:p.sebep,ozet:p.ozet}}};if(p.sebep==='sikayet')u.duygu='sinirli';
    const t=String(p.tel||'').replace(/\D/g,'');if(t&&!cc?.stated_phone&&t.length>=10)u.stated_phone=t.length===10&&t[0]==='5'?'0'+t:t;
    await adminSb.from('calls').update(u).eq('id',cid);}}
  const ep=pk.eposta&&st.eposta_ozet?.aktif&&st.eposta_ozet.adres,ck=pk.cikis&&st.cikis?.url;if(!ep&&!ck)return;

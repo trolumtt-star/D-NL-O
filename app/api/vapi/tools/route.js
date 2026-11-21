@@ -1,3 +1,4 @@
+import {sgAyar,gelAlMi,son10 as sgSon10,teyitKontrol} from '@/lib/siparisGuvenlik';
 import {vapiGizli,vapiIzin,basliktan} from '@/lib/gizli';import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {resolve} from '@/lib/resolve';import {tariftenBul} from '@/lib/harita';import {bildir,siparisBildir} from '@/lib/bildir';import {paketOf} from '@/lib/paket';import {smsGonder} from '@/lib/entegrasyon';import {takvimeYaz} from '@/lib/google';import {kuryeCagir} from '@/lib/kurye';import {sadakatKontrol,randevuTeyit,beklemeEkle,izinKaydet,son10,ekSatisKaydet,patronIslem} from '@/lib/buyume';
 // Kuş uçuşu mesafe (km)
 const km=(a,b)=>{const R=6371,r=x=>x*Math.PI/180,dl=r(b.lat-a.lat),dg=r(b.lng-a.lng),h=Math.sin(dl/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dg/2)**2;return 2*R*Math.asin(Math.sqrt(h));};
@@ -51,20 +52,24 @@ export async function POST(req){
   else if(name==='save_order'){const or=String(a.orders||'').trim().slice(0,600);
    if(!or)out={ok:false,reason:'Sipariş boş. Ürünleri ve adetleri yazıp tekrar çağır.'};
    else if(!call.id)out={ok:false,reason:'call_id yok'};
+   else if(sgAyar(ay).gizli&&!sgSon10(call.customer?.number)&&!gelAlMi(a.address))out={ok:false,reason:'gizli_numara',message:'Arayanın numarası gizli; bu işletme gizli numaradan paket servis siparişi almıyor. Müşteriye kibarca, paket servis için numarasını gizlemeden tekrar araması gerektiğini söyle. Gel-al isterse address alanına "gel-al" yazıp tekrar kaydet.'};
    else if(bolge&&+a.lat&&+a.lng&&km(bolge.merkez,{lat:+a.lat,lng:+a.lng})>bolge.km)out={ok:false,reason:'bolge_disi',message:`Bu adres teslimat bölgesinin dışında (yaklaşık ${km(bolge.merkez,{lat:+a.lat,lng:+a.lng}).toFixed(1)} km, sınır ${bolge.km} km). Müşteriye kibarca bu adrese teslimat yapamadığınızı söyle; gel-al isterse address alanına "gel-al" yazıp tekrar kaydet.`};
    else{const st=String(a.phone||'').replace(/\D/g,''),sp=st.length>=10&&st.length<=13?(st.length===10&&st[0]==='5'?'0'+st:st):null;
     const {data:cid,error}=await adminSb.rpc('save_order_live',{p_business:bid,p_call:call.id,p_phone:call.customer?.number||null,p_name:a.customerName?String(a.customerName).slice(0,80):null,p_orders:or,p_address:a.address?String(a.address).slice(0,300):null,p_stated:sp});
     if(!error&&cid&&a.acil===true)await adminSb.from('calls').update({acil:true}).eq('id',cid);
     if(!error&&cid&&(a.lat||a.kuryeNotu)){const {data:cr}=await adminSb.from('calls').select('extracted').eq('id',cid).single();const ek={...(cr?.extracted||{})};
      if(+a.lat&&+a.lng)ek.konum={lat:+a.lat,lng:+a.lng};if(a.kuryeNotu)ek.kuryeNotu=String(a.kuryeNotu).slice(0,300);await adminSb.from('calls').update({extracted:ek}).eq('id',cid);}
+    // Sahte sipariş koruması: şüpheli siparişler "teyit bekliyor" olur, mutfağa hazırla diye düşmez
+    let teyit=null;if(!error&&cid)try{const sg=sgAyar(ay),no=sgSon10(call.customer?.number)||sgSon10(sp),ga=gelAlMi(a.address);const k=await teyitKontrol({bid,cid,no,gelAl:ga,siparis:or,sg});
+     if(k.sebepler.length){teyit={sebep:k.sebepler.join(' · '),tutar:k.tutar||null,zaman:new Date().toISOString()};const {data:cr}=await adminSb.from('calls').select('extracted').eq('id',cid).single();await adminSb.from('calls').update({extracted:{...(cr?.extracted||{}),teyit}}).eq('id',cid);}}catch{}
     if(!error&&cid&&a.ekSatis&&pk.ekSatis)try{await ekSatisKaydet(bid,call.id,a.ekSatis,'menu_items');}catch{}
     let odul=null;if(!error&&cid&&pk.sadik)try{odul=await sadakatKontrol(bid,ay,son10(sp||call.customer?.number),call.id);}catch{}
-    if(!error&&cid)await siparisBildir(bid,cid,`${odul?.odul?`🎁 SADAKAT ÖDÜLÜ (${odul.n}. sipariş): ${odul.odul}\n`:''}${a.acil===true?'🚨 ACİL · ':''}🛵 Yeni sipariş\n${or}${a.address?'\n📍 '+a.address:''}${a.customerName?'\n👤 '+a.customerName:''}${sp||call.customer?.number?'\n📞 '+(sp||call.customer?.number):''}${+a.lat&&+a.lng?`\n🗺 https://maps.google.com/?q=${a.lat},${a.lng}`:''}`);
+    if(!error&&cid)await siparisBildir(bid,cid,`${teyit?`⚠️ TEYİT GEREKİYOR: ${teyit.sebep}\nMüşteriyi arayıp onaylayın, sonra panelden Onayla'ya basın.\n`:''}${odul?.odul?`🎁 SADAKAT ÖDÜLÜ (${odul.n}. sipariş): ${odul.odul}\n`:''}${a.acil===true?'🚨 ACİL · ':''}🛵 Yeni sipariş\n${or}${a.address?'\n📍 '+a.address:''}${a.customerName?'\n👤 '+a.customerName:''}${sp||call.customer?.number?'\n📞 '+(sp||call.customer?.number):''}${+a.lat&&+a.lng?`\n🗺 https://maps.google.com/?q=${a.lat},${a.lng}`:''}`);
     if(!error&&cid&&pk.sms&&ay.sms_onay){const no=sp||call.customer?.number;const {count:onceki}=await adminSb.from('webhook_events').select('id',{count:'exact',head:true}).eq('type','sms_onay').eq('vapi_call_id',call.id);
      // Sipariş aynı çağrıda güncellenirse ikinci SMS gitmez
      if(no&&!onceki){await adminSb.from('webhook_events').insert({type:'sms_onay',business_id:bid,vapi_call_id:call.id,payload:{}});await smsGonder(no,`${biz.name||'İşletme'}: Siparişiniz alındı. ${String(or).slice(0,80)}. Afiyet olsun!`);}}
-    if(!error&&cid&&pk.kurye&&ay.kurye?.ne_zaman==='gelince'&&!/gel-?al/i.test(String(a.address||'')))try{await kuryeCagir(bid,cid);}catch{}
-    out=error?{ok:false,reason:error.message}:{ok:true,kayit:cid,message:'Sipariş panele düştü. Müşteriye siparişin alındığını ve teslim süresini söyle.'};}}
+    if(!error&&cid&&!teyit&&pk.kurye&&ay.kurye?.ne_zaman==='gelince'&&!/gel-?al/i.test(String(a.address||'')))try{await kuryeCagir(bid,cid);}catch{}
+    out=error?{ok:false,reason:error.message}:{ok:true,kayit:cid,message:teyit?'Sipariş alındı ama işletmenin teyidi gerekiyor. Müşteriye siparişini aldığını, işletmenin kısa süre içinde teyit için onu arayabileceğini söyle; teslim süresi sözü verme.':'Sipariş panele düştü. Müşteriye siparişin alındığını ve teslim süresini söyle.'};}}
   else if(name==='save_request'){
    // Randevulu/talepli sektörlerin canlı kaydı: bilgiler panele anında düşer, tekrar çağrılınca birleşir.
    const ex={};for(const [k,v] of Object.entries(a||{})){

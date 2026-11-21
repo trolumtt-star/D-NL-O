@@ -8,7 +8,8 @@ export default function AsistanAyar({tok,siparis}){
  const api=(m,b)=>req('/api/isletme-ayar',m,b);
  const doldur=j=>{setD(j);setF({tatil:j.tatil.aktif,tmesaj:j.tatil.mesaj||'',kara:(j.kara_liste||[]).map(n=>'0'+n).join('\n'),kamp:j.kampanya.aktif,kmetin:j.kampanya.metin||'',bilgi:j.bilgi||'',
   ad:j.asistan.ad||'',kisilik:j.asistan.kisilik||'',maxdk:j.gorusme.max_dk||0,yavas:!!j.gorusme.yavas,kkapali:!!j.gorusme.kayit_kapali,km:j.teslimat_km||0,acil:j.acil_tanim||'',
-  aktarma:j.aktarma_no?'0'+String(j.aktarma_no).slice(-10):'',hat:j.hatirlatma||'yok',smsOnay:!!j.sms_onay,ep:!!j.eposta_ozet.aktif,epAdres:j.eposta_ozet.adres||'',cikis:j.cikis?.url||'',yorum:!!j.yorum.aktif,yorumLink:j.yorum.link||'',waOto:!!j.wa_oto});};
+  aktarma:j.aktarma_no?'0'+String(j.aktarma_no).slice(-10):'',hat:j.hatirlatma||'yok',smsOnay:!!j.sms_onay,ep:!!j.eposta_ozet.aktif,epAdres:j.eposta_ozet.adres||'',cikis:j.cikis?.url||'',yorum:!!j.yorum.aktif,yorumLink:j.yorum.link||'',waOto:!!j.wa_oto,
+  sgGizli:j.siparis_guvenlik?.gizli!==false,sgTL:j.siparis_guvenlik?.yeniTL??600,sgSaat:j.siparis_guvenlik?.saatlik??3});};
  const gYukle=()=>req('/api/google/baglan','GET').then(setGt).catch(()=>{});const sYukle=()=>req('/api/ses-kopya','GET').then(setOs).catch(()=>{});
  useEffect(()=>{api('GET').then(doldur).catch(e=>setMsg({genel:e.message}));gYukle();sYukle();
   try{const q=new URLSearchParams(location.search).get('takvim');if(q)setMsg({takvim:q==='ok'?'Google Takvim bağlandı.':'Google Takvim bağlanamadı, tekrar deneyin.'});}catch{}},[]);
@@ -34,6 +35,12 @@ export default function AsistanAyar({tok,siparis}){
   {siparis&&<div className="card sec2"><h2>Teslimat bölgesi</h2><p className="mut">Asistan adresi haritada bulunca dükkânınıza uzaklığına bakar; sınırın dışındaysa kibarca teslimat yapamadığınızı söyler, gel-al önerir.</p>
    {!d.konumVar&&<p className="mut">Önce aşağıdaki "Dükkân konumu" kartından adresinizi kaydedin.</p>}
    <div className="frm"><label>Teslimat yarıçapı<select value={f.km} onChange={e=>setF({...f,km:+e.target.value})}>{[0,1,2,3,4,5,7,10,15,20].map(n=><option key={n} value={n}>{n?n+' km':'Kontrol etme'}</option>)}</select></label>{btn('teslimat',{km:f.km},'Kaydedildi.')}</div>{M('teslimat')}</div>}
+  {siparis&&<div className="card sec2"><h2>Sahte sipariş koruması</h2><p className="mut">Şüpheli paket siparişleri "⚠ Teyit bekliyor" olarak gelir: mutfağa hazırla diye düşmez, kuryeye gitmez. Müşteriyi arayıp doğrulayın, sonra siparişte <b>Hazırlanmaya al</b>'a basın ya da iptal edin.</p>
+   {ck('sgGizli','Numarası gizli arayandan paket servis alma (gel-al alınır)')}
+   <div className="frm"><label>İlk kez sipariş veren numarada teyit iste, tutar en az<select value={f.sgTL} onChange={e=>setF({...f,sgTL:+e.target.value})}>{[0,300,400,500,600,800,1000,1500,2000].map(n=><option key={n} value={n}>{n?n+' TL':'Teyit isteme'}</option>)}</select></label>
+    <label>Aynı numaradan 1 saatte kaçıncı siparişte teyit iste<select value={f.sgSaat} onChange={e=>setF({...f,sgSaat:+e.target.value})}>{[0,2,3,4,5].map(n=><option key={n} value={n}>{n?n+'. siparişte':'Teyit isteme'}</option>)}</select></label></div>
+   <p className="mut" style={{fontSize:'.8rem'}}>Tutar, siparişteki ürünlerin menünüzdeki fiyatlarından yaklaşık hesaplanır. Kara listeye aldığınız numaralar zaten asistana ulaşamaz.</p>
+   {btn('siparis_guvenlik',{gizli:f.sgGizli,yeniTL:f.sgTL,saatlik:f.sgSaat},'Kaydedildi.')}{M('siparis_guvenlik')}</div>}
   <div className="card sec2"><h2>Acil durumlar</h2><p className="mut">Hangi durumların acil sayılacağını yazın; asistan böyle bir talebi 🚨 ile işaretler ve öncelikli bildirim gönderir.</p>
    <input value={f.acil} maxLength={300} onChange={e=>setF({...f,acil:e.target.value})} placeholder={siparis?'ör. Yanlış/eksik sipariş şikâyeti, alerji sorusu':'ör. Şiddetli diş ağrısı, kırık diş, kanama'}/>{btn('acil',{metin:f.acil},'Kaydedildi.')}{M('acil')}</div>
   <div className="card sec2"><h2>Kara liste</h2><p className="mut">Bu numaralar aradığında asistan açmaz, dakikanız da harcanmaz. Her satıra bir numara.</p>
