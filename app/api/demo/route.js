@@ -20,5 +20,6 @@ export async function GET(req){const pub=process.env.VAPI_PUBLIC_KEY;if(!pub){tr
 export async function POST(req){try{const b=await req.json().catch(()=>({}));const m=String(b.hata||'').slice(0,400);if(!m)return NextResponse.json({ok:true});
  const ip=crypto.createHash('sha256').update('demo:'+(req.headers.get('x-forwarded-for')||'').split(',')[0].trim()).digest('hex').slice(0,24),gun=new Date(Date.now()-864e5).toISOString();
  const {count}=await adminSb.from('webhook_events').select('id',{count:'exact',head:true}).eq('type','demo_istemci_hata').eq('payload->>ip',ip).gte('created_at',gun);
- if((count||0)<20)await adminSb.from('webhook_events').insert({type:'demo_istemci_hata',payload:{ip,hata:m,tip:String(b.tip||'').slice(0,20),ua:String(req.headers.get('user-agent')||'').slice(0,120)}});
+ const {count:top}=await adminSb.from('webhook_events').select('id',{count:'exact',head:true}).eq('type','demo_istemci_hata').gte('created_at',gun);
+ if((count||0)<20&&(top||0)<2000)await adminSb.from('webhook_events').insert({type:'demo_istemci_hata',payload:{ip,hata:m,tip:String(b.tip||'').slice(0,20),ua:String(req.headers.get('user-agent')||'').slice(0,120)}});
  return NextResponse.json({ok:true});}catch{return NextResponse.json({ok:true});}}

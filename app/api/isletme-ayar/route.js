@@ -1,5 +1,5 @@
 // İşletme sahibinin asistan ayarları. Hepsi businesses.settings içinde tutulur; /api/vapi/assist her aramada okur.
-import {NextResponse} from 'next/server';import crypto from 'crypto';import {adminSb} from '@/lib/admin';import {requireOwner} from '@/lib/owner';import {paketOf,enAzPaket} from '@/lib/paket';import {sgAyar} from '@/lib/siparisGuvenlik';import {durum,tr90} from '@/lib/entegrasyon';import {cikisGonder,urlGuvenli} from '@/lib/cikis';
+import {NextResponse} from 'next/server';import crypto from 'crypto';import {adminSb} from '@/lib/admin';import {requireOwner} from '@/lib/owner';import {paketOf,enAzPaket} from '@/lib/paket';import {sgAyar} from '@/lib/siparisGuvenlik';import {mesajDurum} from '@/lib/mesajLimit';import {durum,tr90} from '@/lib/entegrasyon';import {cikisGonder,urlGuvenli} from '@/lib/cikis';
 export const dynamic='force-dynamic';
 const hata=(m,s=400)=>NextResponse.json({error:m},{status:s});
 // Asistanın şablon motoru {{ }} ve {% %} kullanır; işletmenin yazdığı metin şablon gibi çalışmasın
@@ -15,7 +15,7 @@ const ozet=b=>{const s=b.settings||{},pk=paketOf(b),d=durum();
   cikis:s.cikis?{url:s.cikis.url,gizli:s.cikis.gizli}:null,yorum:s.yorum||{aktif:false,link:''},wa_oto:!!s.wa_oto,konumVar:!!s.konum?.lat,siparis_guvenlik:sgAyar(s),
   baglanti:{netgsm:d.netgsm,eposta:d.eposta,whatsapp:d.whatsapp},
   paket:Object.fromEntries(Object.entries(pk).filter(([k])=>k!=='id')),enAz:Object.fromEntries(Object.keys(KAPI).map(k=>[k,enAzPaket(k)]))};};
-export async function GET(req){try{const b=await requireOwner(req);return NextResponse.json(ozet(b));}catch(e){return hata(e.message,401);}}
+export async function GET(req){try{const b=await requireOwner(req);let md=null;try{md=await mesajDurum(b);}catch{}return NextResponse.json({...ozet(b),mesajDurum:md});}catch(e){return hata(e.message,401);}}
 export async function POST(req){try{const b=await requireOwner(req);const x=await req.json(),pk=paketOf(b),s={...(b.settings||{})};
  const kapi=k=>{if(!pk[k])throw new Error(`${KAPI[k]} ${enAzPaket(k)} paketten itibaren açılır.`);};
  switch(x.islem){
