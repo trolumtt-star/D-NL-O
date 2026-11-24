@@ -19,7 +19,7 @@ export async function POST(req){
  const hs=basliktan(req);
  if(!(await vapiIzin(hs))){await log('tool_reddedildi',null,'Araç isteği reddedildi: VAPI_SECRET '+(hs?'geldi ama farklı':'hiç gelmedi')+'. Vapi > Tools > aracın Server ayarına aynı Secret Token yazılmalı.');return NextResponse.json({error:'unauthorized'},{status:401});}
  const body=await req.json(),m=body.message||body,call=m.call||{},aid=call.assistantId||m.assistant?.id;
- const bid=await resolve(req,'tools',aid);
+ const bid=await resolve(req,'tools',aid,call.phoneNumberId||m.phoneNumber?.id);
  const {data:biz}=bid?await adminSb.from('businesses').select('name,status,plan,vertical,settings,quota_minutes_total').eq('id',bid).single():{data:null};
  const pk=biz?paketOf(biz):null,ay=biz?.settings||{},bolge=ay.teslimat_km&&ay.konum?.lat?{km:+ay.teslimat_km,merkez:{lat:+ay.konum.lat,lng:+ay.konum.lng}}:null;
  const results=[],calls=m.toolCallList||m.toolCalls||[];

@@ -24,7 +24,7 @@ export async function POST(req){
  if(type!=='end-of-call-report'||!call.id)return NextResponse.json({ok:true,ignored:type});
  // Yönlendirme testi ve test hattının giden araması: çağrı/dakika olarak kaydedilmez
  if(call.assistantOverrides?.variableValues?.yonlendirmeTest==='evet'||call.metadata?.dinlio_test||call.assistant?.metadata?.dinlio_test)return NextResponse.json({ok:true,ignored:'test'});
- const bid=await resolve(req,'events',aid);
+ const bid=await resolve(req,'events',aid,call.phoneNumberId||m.phoneNumber?.id);
  await adminSb.from('webhook_events').insert({type,vapi_call_id:call.id,business_id:bid,payload:body});
  if(!bid){await log('reddedildi',null,call.id,'İşletme bulunamadı. Adres yanlış veya araç adresi kullanılmış, ya da assistant ID eşleşmiyor.');return NextResponse.json({ok:true,error:'business_not_found'});}
  try{
