@@ -11,6 +11,9 @@ export async function POST(req){try{await requireAdmin(req);const b=await req.js
 export async function PATCH(req){try{await requireAdmin(req);const {id,reset,password,...p}=await req.json();
  const ok=['name','status','quota_minutes_total','vapi_assistant_id','vapi_phone_number','vapi_phone_id','phone_number','table_count','plan','vertical','email','business_type'],d={};
  ok.forEach(k=>{if(k in p)d[k]=p[k]===''?null:p[k];});
+ // Bir asistan veya telefon numarası tek işletmeye ait olmalı: ortak olursa aramalar/siparişler yanlış işletmeye yazılır
+ for(const k of ['vapi_assistant_id','vapi_phone_id'])if(d[k]){const {data:o}=await adminSb.from('businesses').select('name').eq(k,d[k]).neq('id',id).limit(1);
+  if(o?.[0])return NextResponse.json({error:(k==='vapi_assistant_id'?'Bu Vapi asistanı':'Bu Vapi numarası')+' zaten "'+o[0].name+'" işletmesinde kullanılıyor. Her işletmenin kendi asistanı/numarası olmalı.'},{status:400});}
  if(reset){const {data:c}=await adminSb.from('businesses').select('quota_minutes_total,ek_dakika,quota_seconds_used').eq('id',id).single();
   // önce paket dakikası harcanır; ek dakikanın kullanılmayan kısmı bir sonraki aya devreder
   if(c){const lim=(c.quota_minutes_total+(c.ek_dakika||0))*60,u=c.quota_seconds_used||0;d.ek_dakika=Math.max(0,Math.min(c.ek_dakika||0,Math.floor((lim-u)/60)));d._asim=Math.max(0,u-lim);}}

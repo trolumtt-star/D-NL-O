@@ -9,6 +9,6 @@ export async function GET(req){try{await requireAdmin(req);}catch(e){return hata
  return NextResponse.json({...a,vapi:vn,vapiHata:v.ok?null:v.error});}
 export async function POST(req){try{await requireAdmin(req);}catch(e){return hata(e.message,401);}
  try{const x=await req.json();
-  if(x.islem==='kaydet')return NextResponse.json({ok:true,...await numaraAyarKaydet({ucret:x.ucret,havuz:x.havuz})});
+  if(x.islem==='kaydet')return NextResponse.json({ok:true,...await numaraAyarKaydet({ucret:x.ucret,havuz:x.havuz,testHat:x.testHat})});
   if(x.islem==='oto')return NextResponse.json({ok:true,...await otoKurulum(String(x.id||''))});
   return hata('Geçersiz işlem');}catch(e){return hata(e.message);}}
