@@ -1,4 +1,4 @@
-import {vapiGizli,vapiGizliUret} from '@/lib/gizli';import {araclariKur} from '@/lib/asistanKur';import {istekModunaAl} from '@/lib/vapi';
+import {vapiGizli,vapiGizliUret} from '@/lib/gizli';import {araclariKur,KULAKLAR} from '@/lib/asistanKur';import {istekModunaAl} from '@/lib/vapi';
 // Admin: dış hizmetlerin bağlantı durumu, test gönderimleri ve işletmeye WhatsApp/Instagram kanalı bağlama.
 import {demoHepsiniKur} from '@/lib/demoKur';import {NextResponse} from 'next/server';import {adminSb,requireAdmin} from '@/lib/admin';import {durum,smsGonder,epostaGonder} from '@/lib/entegrasyon';import {SITE} from '@/lib/site';import {vapiIstek} from '@/lib/vapi';import {sablon} from '@/lib/asistanOlustur';
 export const dynamic='force-dynamic';
@@ -6,9 +6,9 @@ const hata=(m,s=400)=>NextResponse.json({error:m},{status:s});
 export const maxDuration=60;
 export async function GET(req){try{await requireAdmin(req);
  const {data:k}=await adminSb.from('mesaj_kanallari').select('id,business_id,tur,dis_id,durum,created_at,businesses(name)').order('created_at',{ascending:false}).limit(100);
- const {data:sa}=await adminSb.from('sistem_ayarlari').select('anahtar,deger').in('anahtar',['demo','sablon_asistan']);const sm=Object.fromEntries((sa||[]).map(x=>[x.anahtar,x.deger]));
+ const {data:sa}=await adminSb.from('sistem_ayarlari').select('anahtar,deger').in('anahtar',['demo','sablon_asistan','kulak']);const sm=Object.fromEntries((sa||[]).map(x=>[x.anahtar,x.deger]));
  const gz=await vapiGizli();
- return NextResponse.json({gizli:{ayarli:gz.guclu,kaynak:gz.kaynak,tarih:gz.tarih},durum:{...durum(),vapiSecret:gz.guclu,demo:!!(sm.demo?.sektor&&Object.keys(sm.demo.sektor).length&&process.env.VAPI_PUBLIC_KEY)},site:SITE,kanallar:k||[],sablon:sm.sablon_asistan?.id||null,demoId:sm.demo?.sektor&&Object.keys(sm.demo.sektor).length?Object.keys(sm.demo.sektor).length+' sektör':null,demoHata:null});}catch(e){return hata(e.message,401);}}
+ return NextResponse.json({kulak:{isletme:sm.kulak?.isletme||'deepgram',demo:sm.kulak?.demo||'deepgram'},gizli:{ayarli:gz.guclu,kaynak:gz.kaynak,tarih:gz.tarih},durum:{...durum(),vapiSecret:gz.guclu,demo:!!(sm.demo?.sektor&&Object.keys(sm.demo.sektor).length&&process.env.VAPI_PUBLIC_KEY)},site:SITE,kanallar:k||[],sablon:sm.sablon_asistan?.id||null,demoId:sm.demo?.sektor&&Object.keys(sm.demo.sektor).length?Object.keys(sm.demo.sektor).length+' sektör':null,demoHata:null});}catch(e){return hata(e.message,401);}}
 export async function POST(req){try{await requireAdmin(req);const x=await req.json();
  if(x.islem==='sms_test'){const r=await smsGonder(x.no,'Dinlio AI test mesajı. SMS bağlantınız çalışıyor.');return r.ok?NextResponse.json({ok:true,mesaj:'SMS gönderildi.'}):hata(r.neden);}
  if(x.islem==='eposta_test'){const r=await epostaGonder(x.adres,'Dinlio AI test e-postası','<p>E-posta bağlantınız çalışıyor.</p>');return r.ok?NextResponse.json({ok:true,mesaj:'E-posta gönderildi.'}):hata(r.neden);}
@@ -27,6 +27,12 @@ export async function POST(req){try{await requireAdmin(req);const x=await req.js
   for(const b of bl||[]){try{await araclariKur(b.id,o);ok++;}catch(e){hatalar.push((b.name||b.id)+': '+String(e.message).slice(0,80));}}
   try{const dm=await demoHepsiniKur();if(dm?.hatalar?.length)hatalar.push('Demo: '+dm.hatalar.join(', '));}catch(e){hatalar.push('Demo: '+String(e.message).slice(0,80));}
   return NextResponse.json({ok:!hatalar.length,mesaj:`${ok} işletmenin asistanı ve demo asistanları güncellendi.`+(hatalar.length?' Güncellenemeyenler: '+hatalar.join(' | '):'')});}
+ // Kulak seçimi: demo seçilince demo asistanları hemen yeniden kurulur; işletmeler için "Bütün asistanları güncelle" gerekir
+ if(x.islem==='kulak'){const kim=x.kim==='demo'?'demo':'isletme',mo=String(x.model||'');if(!KULAKLAR[mo])return hata('Geçersiz kulak seçimi.');
+  const {data:e}=await adminSb.from('sistem_ayarlari').select('deger').eq('anahtar','kulak').maybeSingle();
+  await adminSb.from('sistem_ayarlari').upsert({anahtar:'kulak',deger:{...(e?.deger||{}),[kim]:mo}},{onConflict:'anahtar'});
+  if(kim==='demo'){const r=await demoHepsiniKur();return NextResponse.json({ok:!r.hatalar.length,mesaj:'Demo kulağı: '+KULAKLAR[mo]+'. '+r.kurulan+' demo asistanı güncellendi.'+(r.hatalar.length?' Sorunlar: '+r.hatalar.join(' | '):'')});}
+  return NextResponse.json({ok:true,mesaj:'İşletme kulağı: '+KULAKLAR[mo]+'. Uygulamak için "Bütün asistanları güncelle"ye basın.'});}
  if(x.islem==='demo_kur'){const r=await demoHepsiniKur();
   return NextResponse.json({ok:!r.hatalar.length,mesaj:`${r.kurulan} sektörün demo asistanı Vapi'de hazır.`+(r.hatalar.length?' Kurulamayanlar: '+r.hatalar.join(' | '):'')+(process.env.VAPI_PUBLIC_KEY?'':' ⚠ Vercel\'e VAPI_PUBLIC_KEY eklenmemiş, demo bu yüzden açılmaz.')});}
  if(x.islem==='kanal_sil'){await adminSb.from('mesaj_kanallari').delete().eq('id',String(x.id||''));return NextResponse.json({ok:true});}

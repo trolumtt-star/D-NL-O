@@ -64,7 +64,7 @@ export async function POST(req){
    // Görüşme ayarları: süre sınırı, ses kaydını kapatma, yavaş konuşma, özel ses
    if(go.max_dk>=2&&go.max_dk<=30)ov.maxDurationSeconds=go.max_dk*60;
    if(go.kayit_kapali)ov.artifactPlan={recordingEnabled:false};
-   const oz=pk.ozelSes&&st.ozel_ses?.voiceId&&st.ozel_ses.aktif!==false?{provider:'11labs',voiceId:st.ozel_ses.voiceId,model:'eleven_turbo_v2_5'}:null,ses=oz||(go.yavas&&st.vapi_voice?.provider?{...st.vapi_voice}:null);
+   const oz=pk.ozelSes&&st.ozel_ses?.voiceId&&st.ozel_ses.aktif!==false?{provider:'11labs',voiceId:st.ozel_ses.voiceId,model:'eleven_flash_v2_5'}:null,ses=oz||(go.yavas&&st.vapi_voice?.provider?{...st.vapi_voice}:null);
    // Hız ayarı sadece desteklediğini bildiğimiz ses sağlayıcılarında gönderilir; diğerlerinde yavaşlık prompttaki kuralla sağlanır
    if(ses){if(go.yavas&&['11labs','openai','azure','playht'].includes(ses.provider))ses.speed=0.85;if(oz||ses.speed)ov.voice=ses;}
    vv.yavas=go.yavas?'evet':'';
