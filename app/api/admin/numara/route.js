@@ -1,5 +1,5 @@
 // Admin → Numaralar: 0850 kira ücreti ve otomatik bağlanacak numara havuzu (Vapi'ye bağlı numaralar).
-import {NextResponse} from 'next/server';import {adminSb,requireAdmin} from '@/lib/admin';import {numaraAyar,numaraAyarKaydet} from '@/lib/numara';import {vapiIstek} from '@/lib/vapi';import {otoKurulum} from '@/lib/otoKurulum';
+import {NextResponse} from 'next/server';import {adminSb,requireAdmin} from '@/lib/admin';import {numaraAyar,numaraAyarKaydet,havuzKontrol} from '@/lib/numara';import {vapiIstek} from '@/lib/vapi';import {otoKurulum} from '@/lib/otoKurulum';
 export const dynamic='force-dynamic';export const maxDuration=60;
 const hata=(m,s=400)=>NextResponse.json({error:m},{status:s});
 export async function GET(req){try{await requireAdmin(req);}catch(e){return hata(e.message,401);}
@@ -9,6 +9,6 @@ export async function GET(req){try{await requireAdmin(req);}catch(e){return hata
  return NextResponse.json({...a,vapi:vn,vapiHata:v.ok?null:v.error});}
 export async function POST(req){try{await requireAdmin(req);}catch(e){return hata(e.message,401);}
  try{const x=await req.json();
-  if(x.islem==='kaydet')return NextResponse.json({ok:true,...await numaraAyarKaydet({ucret:x.ucret,havuz:x.havuz,testHat:x.testHat})});
+  if(x.islem==='kaydet'){const r=await numaraAyarKaydet({ucret:x.ucret,havuz:x.havuz,testHat:x.testHat});await havuzKontrol();return NextResponse.json({ok:true,...r});}
   if(x.islem==='oto')return NextResponse.json({ok:true,...await otoKurulum(String(x.id||''))});
   return hata('Geçersiz işlem');}catch(e){return hata(e.message);}}

@@ -93,6 +93,7 @@ export async function POST(req){
  }catch(e){
   // Beklenmeyen hata: arama düşmesin. İşletme biliniyorsa asistanı ek ayarlar olmadan ver, o da yoksa işletmenin telefonuna aktar.
   try{await adminSb.from('webhook_events').insert({type:'assist_hata',business_id:biz?.id||null,payload:{hata:String(e?.message||e).slice(0,300)}});}catch{}
+  try{const {adminIs}=await import('@/lib/adminIs');adminIs({tur:'cagri',anahtar:'assist:'+new Date().toISOString().slice(0,10),business_id:biz?.id||null,baslik:'Arama karşılamada hata',detay:'Bir arama yedek ayarla karşılandı (müşteri yine de asistana ya da işletmeye bağlandı).\nHata: '+String(e?.message||e).slice(0,200)}).catch(()=>{});}catch{}
   if(biz?.vapi_assistant_id&&biz.status!=='suspended')return NextResponse.json({assistantId:biz.vapi_assistant_id});
   const num0=biz&&e164(biz.settings?.kota_yonlendirme||biz.phone_number);if(num0)return NextResponse.json({destination:{type:'number',number:num0,message:'Sizi işletmeye bağlıyorum.'}});
   return NextResponse.json({error:'internal'});}
