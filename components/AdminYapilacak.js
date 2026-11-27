@@ -1,7 +1,7 @@
 'use client';
 // Admin → Genel bakış → Yapılacaklar: sistemin kendi başına çözemediği işler + admin telefon bildirimi
 import {useEffect,useState} from 'react';import PushAyar from './PushAyar';
-const TUR={kurulum:['Kurulum','#b45309'],numara:['Numara','#b45309'],odeme:['Ödeme','#b91c1c'],cagri:['Çağrı','#b91c1c'],satis:['Satış','#1d4ed8']};
+const TUR={kurulum:['Kurulum','#b45309'],numara:['Numara','#b45309'],odeme:['Ödeme','#b91c1c'],cagri:['Çağrı','#b91c1c'],satis:['Satış','#1d4ed8'],guvenlik:['Güvenlik','#7c3aed']};
 export default function AdminYapilacak({tok}){
  const [l,setL]=useState(null),[m,setM]=useState(''),[ac,setAc]=useState(false);
  const H=async()=>({'content-type':'application/json',authorization:'Bearer '+await tok()});
