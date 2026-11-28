@@ -1,5 +1,5 @@
 // Admin: teklif asistanı yönetimi (kurulum, arama listesi, başlat/durdur, sonuçlar).
-import {vapiGizli} from '@/lib/gizli';import {NextResponse} from 'next/server';import {adminSb,requireAdmin} from '@/lib/admin';import {ayar,ayarYaz,saatUygun,sonrakiniAra,telNo,demoSil,ASISTAN_PROMPT} from '@/lib/teklif';import {vapiIstek} from '@/lib/vapi';import {SITE} from '@/lib/site';
+import {vapiGizli} from '@/lib/gizli';import {NextResponse} from 'next/server';import {adminSb,requireAdmin} from '@/lib/admin';import {ayar,ayarYaz,saatUygun,sonrakiniAra,telNo,demoSil,ASISTAN_PROMPT,butceDurum} from '@/lib/teklif';import {vapiIstek} from '@/lib/vapi';import {SITE} from '@/lib/site';
 export const dynamic='force-dynamic';export const maxDuration=40;
 const hata=(m,s=400)=>NextResponse.json({error:m},{status:s});
 const SAAT=/^([01]\d|2[0-3]):[0-5]\d$/;
@@ -8,7 +8,7 @@ async function durum(){const a=await ayar();
   adminSb.from('teklif_arama').select('id,ad,tel,kategori,durum,deneme,sonraki_at,son_arama_at,randevu_at,yetkili,notlar,ozet,demo_asistan_id,created_at').order('created_at',{ascending:false}).limit(400),
   adminSb.from('aranmayacak').select('tel',{count:'exact',head:true}),vapiIstek('/phone-number')]);
  const sayac={};for(const x of l||[])sayac[x.durum]=(sayac[x.durum]||0)+1;
- return {ayar:a,saatUygun:saatUygun(a),liste:l||[],sayac,aranmayacak:ret||0,numaralar:Array.isArray(nums?.d)?nums.d.map(n=>({id:n.id,ad:n.name||n.number||n.sipUri||n.id})):[],vapi:!!process.env.VAPI_API_KEY};}
+ return {ayar:a,butce:await butceDurum(a),saatUygun:saatUygun(a),liste:l||[],sayac,aranmayacak:ret||0,numaralar:Array.isArray(nums?.d)?nums.d.map(n=>({id:n.id,ad:n.name||n.number||n.sipUri||n.id})):[],vapi:!!process.env.VAPI_API_KEY};}
 export async function GET(req){try{await requireAdmin(req);return NextResponse.json(await durum());}catch(e){return hata(e.message,401);}}
 export async function POST(req){try{await requireAdmin(req);const x=await req.json(),a=await ayar();
  switch(x.islem){
@@ -44,7 +44,11 @@ export async function POST(req){try{await requireAdmin(req);const x=await req.js
    if(!satir.length)return hata('Her satıra "İşletme adı; telefon" yazın.');
    const {data:ret}=await adminSb.from('aranmayacak').select('tel').in('tel',satir.map(y=>y.tel));const rs=new Set((ret||[]).map(y=>y.tel));
    const {error}=await adminSb.from('teklif_arama').upsert(satir.filter(y=>!rs.has(y.tel)),{onConflict:'tel',ignoreDuplicates:true});if(error)return hata(error.message);break;}
-  case 'baslat':{if(!a.asistan_id)return hata('Önce "Teklif asistanını kur" tuşuna basın.');if(!a.numara_id)return hata('Arama yapılacak Vapi numarasını seçin (Netgsm numaranız Vapi\'ye eklenmiş olmalı).');
+  case 'butce_ekle':{const ek=Number(x.usd);if(!(ek>0&&ek<=1000))return hata('Bütçe 1-1000 dolar arası olmalı.');
+   await ayarYaz({...a,butce:{usd:Math.round(((a.butce?.usd||0)+ek)*100)/100,baslangic:a.butce?.baslangic||new Date().toISOString()}});break;}
+  case 'butce_sifirla':await ayarYaz({...a,aktif:false,butce:{usd:0,baslangic:new Date().toISOString()}});break;
+  case 'baslat':{if(!a.asistan_id)return hata('Önce "Teklif asistanını kur" tuşuna basın.');
+   if((await butceDurum(a)).kalan<0.5)return hata('Önce bütçe ekleyin. Bütçe bitince aramalar kendiliğinden durur.');if(!a.numara_id)return hata('Arama yapılacak Vapi numarasını seçin (Netgsm numaranız Vapi\'ye eklenmiş olmalı).');
    await ayarYaz({...a,aktif:true});const r=await sonrakiniAra();return NextResponse.json({ok:true,mesaj:r.aranan?`${r.aranan} arama başladı.`:'Başlatıldı. '+(r.neden?'Şu an '+r.neden+'; uygun saatte kendiliğinden arar.':r.hata?'Hata: '+r.hata:'Sırada aranacak işletme yok.'),...(await durum())});}
   case 'durdur':await ayarYaz({...a,aktif:false});break;
   case 'tekrar':await adminSb.from('teklif_arama').update({durum:'sirada',sonraki_at:new Date().toISOString(),deneme:0}).eq('id',String(x.id||'')).neq('durum','araniyor');break;

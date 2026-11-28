@@ -1,5 +1,5 @@
 // Teklif asistanının arama sonu raporu: sonucu yazar, sıradaki işletmeyi arar (zincir).
-import {vapiGizli,vapiIzin,basliktan} from '@/lib/gizli';import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {ayar,sonrakiniAra,demoSil} from '@/lib/teklif';
+import {vapiGizli,vapiIzin,basliktan} from '@/lib/gizli';import {NextResponse} from 'next/server';import {adminSb} from '@/lib/admin';import {ayar,sonrakiniAra,demoSil,DK_MALIYET} from '@/lib/teklif';
 export const dynamic='force-dynamic';export const maxDuration=30;
 const ACMADI=/no-answer|did-not-answer|busy|voicemail|failed-to-connect|not-reachable|declined|rejected/i;
 export async function POST(req){
@@ -8,6 +8,9 @@ export async function POST(req){
  const m=body.message||{};if(m.type!=='end-of-call-report')return NextResponse.json({ok:true});
  const id=m.call?.id;const {data:x}=id?await adminSb.from('teklif_arama').select('id,durum,deneme,demo_asistan_id').eq('vapi_call_id',id).maybeSingle():{data:null};
  if(x){const a=await ayar(),u={ozet:String(m.analysis?.summary||m.summary||'').slice(0,800)||null};
+  // Aramanın gerçek maliyeti (Vapi raporundaki cost, yoksa süre × dakika maliyeti) bütçeden düşülsün diye kaydedilir
+  const sn=Number(m.durationSeconds??m.call?.duration??0)||0,cost=Number(m.cost??m.call?.cost);
+  u.maliyet_usd=Number.isFinite(cost)&&cost>=0&&cost<50?cost:Math.round(sn/60*DK_MALIYET*10000)/10000;
   // Asistan sonuç aracını çağırmadıysa sonucu aramanın bitiş nedeninden çıkar
   if(x.durum==='araniyor'){const sebep=String(m.endedReason||'');
    if(ACMADI.test(sebep)){u.durum=x.deneme>=a.max_deneme?'bitti':'acmadi';u.sonraki_at=new Date(Date.now()+(x.deneme>=2?20:3)*36e5).toISOString();u.notlar='Açmadı ('+sebep+')';}
